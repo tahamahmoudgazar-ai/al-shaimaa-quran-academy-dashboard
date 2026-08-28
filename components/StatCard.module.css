@@ -1,0 +1,45 @@
+.card {
+  background: #ffffff;
+  border: 1px solid #d8eaf2;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(18, 59, 93, 0.05);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 16px rgba(18, 59, 93, 0.08);
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #6b8799;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #e5f3fa;
+  color: #1d6f9f;
+  display: grid;
+  place-items: center;
+}
+
+.card > strong {
+  display: block;
+  color: #123b5d;
+  font-size: 30px;
+  line-height: 1;
+  margin: 17px 0 7px;
+}
+
+.card small {
+  color: #4d91b2;
+  font-size: 11px;
+}

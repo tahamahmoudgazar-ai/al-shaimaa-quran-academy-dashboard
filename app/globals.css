@@ -1,0 +1,17 @@
+:root {
+  --navy: #102a43;
+  --navy-2: #163b5c;
+  --bg: #f4f7fa;
+  --card: #ffffff;
+  --text: #172b4d;
+  --muted: #718096;
+  --border: #e3e9ef;
+  --success: #287d4d;
+  --warning: #a66a00;
+  --danger: #b23b3b;
+}
+* { box-sizing: border-box; }
+html, body { margin:0; padding:0; }
+body { font-family: Arial, Helvetica, sans-serif; background:var(--bg); color:var(--text); }
+button, input, select { font:inherit; }
+a { color:inherit; }
