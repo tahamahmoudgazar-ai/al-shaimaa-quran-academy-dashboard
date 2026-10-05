@@ -347,18 +347,17 @@ export default function TeachersPage() {
                     View
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      window.location.assign(
-                        `/admin/teachers/${teacher.id}`
-                      );
-                    }}
-                    style={editButton}
-                  >
-                    Edit
-                  </button>
-
+<button
+  type="button"
+  onClick={() => {
+    window.location.assign(
+      `/admin/teachers/${teacher.id}/edit`
+    );
+  }}
+  style={editButton}
+>
+  Edit
+</button>
                   <button
                     type="button"
                     onClick={() =>

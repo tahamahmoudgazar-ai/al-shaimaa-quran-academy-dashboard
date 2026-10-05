@@ -305,39 +305,33 @@ export default async function StudentDetailsPage({ params }) {
   );
   const lastDay = lastDayOfMonth.toISOString().slice(0, 10);
 
-  const { data: monthlyRows } = await supabase
-    .from("schedule")
-    .select("id, enrollment_id, schedule_date, start_time, end_time, status")
-    .gte("schedule_date", firstDay)
-    .lte("schedule_date", lastDay)
-    .order("schedule_date")
-    .order("start_time");
+  const studentEnrollmentIds = rawEnrollments
+    .map((item) => item.id)
+    .filter(Boolean);
 
-  const monthlyEnrollmentIds = [
-    ...new Set(
-      (monthlyRows || [])
-        .map((row) => row.enrollment_id)
-        .filter(Boolean)
-    )
-  ];
+  let monthlyStudentRows = [];
 
-  let monthlyEnrollments = [];
-
-  if (monthlyEnrollmentIds.length > 0) {
+  if (studentEnrollmentIds.length > 0) {
     const { data } = await supabase
-      .from("enrollments")
-      .select("id, student_id, teacher_id, course_id")
-      .in("id", monthlyEnrollmentIds);
+      .from("schedule")
+      .select(
+        "id, enrollment_id, schedule_date, start_time, end_time, status"
+      )
+      .in("enrollment_id", studentEnrollmentIds)
+      .gte("schedule_date", firstDay)
+      .lte("schedule_date", lastDay)
+      .order("schedule_date")
+      .order("start_time");
 
-    monthlyEnrollments = data || [];
+    monthlyStudentRows = data || [];
   }
 
-  const monthlyStudentRows = (monthlyRows || []).filter((row) => {
-    const enrollment = monthlyEnrollments.find(
-      (item) => item.id === row.enrollment_id
-    );
-    return enrollment?.student_id === student.id;
-  });
+  const monthlyEnrollments = rawEnrollments.map((item) => ({
+    id: item.id,
+    student_id: student.id,
+    teacher_id: item.teacher_id,
+    course_id: item.course_id
+  }));
 
   const monthlyCourseIds = [
     ...new Set(
@@ -995,187 +989,169 @@ export default async function StudentDetailsPage({ params }) {
         )}
       </section>
 
-              {/* Attendance */}
-        <section
+      {/* Attendance */}
+      <section
+        style={{
+          marginTop: 30,
+          padding: 20,
+          border: "1px solid #e3e9ef",
+          borderRadius: 14,
+          background: "#f8fafc"
+        }}
+      >
+        <h2
           style={{
-            marginTop: 30,
-            padding: 20,
-            border: "1px solid #e3e9ef",
-            borderRadius: 14,
-            background: "#f8fafc"
+            margin: "0 0 18px",
+            color: "#16324f",
+            fontSize: 24
           }}
         >
-          <h2
-            style={{
-              margin: "0 0 18px",
-              color: "#16324f",
-              fontSize: 24
-            }}
-          >
-            Attendance
-          </h2>
+          Attendance
+        </h2>
 
-          <p
+        <p
+          style={{
+            margin: "0 0 16px",
+            color: "#718096",
+            fontSize: 14
+          }}
+        >
+          Attendance records for this student.
+        </p>
+
+        {studentAttendanceRows.length === 0 ? (
+          <div
             style={{
-              margin: "0 0 16px",
+              padding: 20,
+              borderRadius: 10,
+              background: "#fff",
+              border: "1px solid #e3e9ef",
               color: "#718096",
-              fontSize: 14
+              textAlign: "center"
             }}
           >
-            Attendance records for this student.
-          </p>
-
-          {studentAttendanceRows.length === 0 ? (
-            <div
+            No attendance records found for this student.
+          </div>
+        ) : (
+          <div
+            style={{
+              overflowX: "auto",
+              background: "#fff",
+              border: "1px solid #e3e9ef",
+              borderRadius: 10
+            }}
+          >
+            <table
               style={{
-                padding: 20,
-                borderRadius: 10,
-                background: "#fff",
-                border: "1px solid #e3e9ef",
-                color: "#718096",
-                textAlign: "center"
-              }}
-            >
-              No attendance records found for this student.
-            </div>
-          ) : (
-            <div
-              style={{
-                overflowX: "auto",
-                background: "#fff",
-                border: "1px solid #e3e9ef",
+                width: "100%",
+                borderCollapse: "separate",
+                borderSpacing: 0,
+                minWidth: 800,
+                overflow: "hidden",
+                border: "1px solid #cbd5e1",
                 borderRadius: 10
               }}
             >
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "separate",
-                  borderSpacing: 0,
-                  minWidth: 650,
-                  overflow: "hidden",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: 10
-                }}
-              >
-                <thead>
-                  <tr style={{ background: "#e2e8f0" }}>
-                    <th
-                      style={{
-                        padding: "14px 16px",
-                        textAlign: "left",
-                        fontWeight: 700,
-                        color: "#1e3a5f",
-                        borderRight: "1px solid #cbd5e1",
-                        borderBottom: "2px solid #94a3b8"
-                      }}
-                    >
-                      Day
-                    </th>
-                    <th
-                      style={{
-                        padding: "14px 16px",
-                        textAlign: "left",
-                        fontWeight: 700,
-                        color: "#1e3a5f",
-                        borderRight: "1px solid #cbd5e1",
-                        borderBottom: "2px solid #94a3b8"
-                      }}
-                    >
-                      Time
-                    </th>
-                    <th
-                      style={{
-                        padding: "14px 16px",
-                        textAlign: "left",
-                        fontWeight: 700,
-                        color: "#1e3a5f",
-                        borderRight: "1px solid #cbd5e1",
-                        borderBottom: "2px solid #94a3b8"
-                      }}
-                    >
-                      Teacher
-                    </th>
-                    <th
-                      style={{
-                        padding: "14px 16px",
-                        textAlign: "left",
-                        fontWeight: 700,
-                        color: "#1e3a5f",
-                        borderBottom: "2px solid #94a3b8"
-                      }}
-                    >
-                      Course
-                    </th>
-                  </tr>
-                </thead>
+              <thead>
+                <tr style={{ background: "#e2e8f0" }}>
+                  <th style={thStyle}>Date</th>
+                  <th style={thStyle}>Time</th>
+                  <th style={thStyle}>Teacher</th>
+                  <th style={thStyle}>Course</th>
+                  <th style={thStyle}>Status</th>
+                  <th style={thStyle}>Note</th>
+                </tr>
+              </thead>
 
-                <tbody>
-                  {studentWeeklyRows.map((row, index) => (
+              <tbody>
+                {studentAttendanceRows.map((row, index) => {
+                  const statusColors = {
+                    present: {
+                      background: "#dcfce7",
+                      color: "#166534"
+                    },
+                    absent: {
+                      background: "#fee2e2",
+                      color: "#991b1b"
+                    },
+                    late: {
+                      background: "#fef3c7",
+                      color: "#92400e"
+                    },
+                    excused: {
+                      background: "#e2e8f0",
+                      color: "#475569"
+                    }
+                  };
+
+                  const statusStyle =
+                    statusColors[row.status] ||
+                    statusColors.present;
+
+                  const enrollment = monthlyEnrollments.find(
+                    (item) => item.id === row.enrollment_id
+                  );
+
+                  return (
                     <tr
                       key={row.id}
                       style={{
-                        background: index % 2 === 0 ? "#ffffff" : "#f8fafc"
+                        background:
+                          index % 2 === 0
+                            ? "#ffffff"
+                            : "#f8fafc"
                       }}
                     >
-                      <td
-                        style={{
-                          padding: "14px 16px",
-                          borderRight: "1px solid #e2e8f0",
-                          borderBottom: "1px solid #e2e8f0",
-                          fontWeight: 600,
-                          color: "#334155"
-                        }}
-                      >
-                        {dayNames[row.day_of_week] || "—"}
+                      <td style={tdStyle}>
+                        {row.schedule_date || "—"}
                       </td>
 
-                      <td
-                        style={{
-                          padding: "14px 16px",
-                          borderRight: "1px solid #e2e8f0",
-                          borderBottom: "1px solid #e2e8f0",
-                          color: "#334155"
-                        }}
-                      >
+                      <td style={tdStyle}>
                         {formatTime(row.start_time)} -{" "}
                         {formatTime(row.end_time)}
                       </td>
 
-                      <td
-                        style={{
-                          padding: "14px 16px",
-                          borderRight: "1px solid #e2e8f0",
-                          borderBottom: "1px solid #e2e8f0",
-                          fontWeight: 600,
-                          color: "#1e3a5f"
-                        }}
-                      >
-                        {weeklyTeacherMap[
-                          row.enrollment?.teacher_id
+                      <td style={tdStyle}>
+                        {monthlyTeacherMap[
+                          enrollment?.teacher_id
                         ] || "—"}
                       </td>
 
-                      <td
-                        style={{
-                          padding: "14px 16px",
-                          borderBottom: "1px solid #e2e8f0",
-                          fontWeight: 600,
-                          color: "#475569"
-                        }}
-                      >
-                        {weeklyCourseMap[
-                          row.enrollment?.course_id
+                      <td style={tdStyle}>
+                        {monthlyCourseMap[
+                          enrollment?.course_id
                         ] || "—"}
+                      </td>
+
+                      <td style={tdStyle}>
+                        <span
+                          style={{
+                            display: "inline-block",
+                            padding: "5px 10px",
+                            borderRadius: 20,
+                            background:
+                              statusStyle.background,
+                            color: statusStyle.color,
+                            fontSize: 12,
+                            fontWeight: 700,
+                            textTransform: "capitalize"
+                          }}
+                        >
+                          {row.status || "—"}
+                        </span>
+                      </td>
+
+                      <td style={tdStyle}>
+                        {row.note || "—"}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
 
       {/* Quran Progress */}

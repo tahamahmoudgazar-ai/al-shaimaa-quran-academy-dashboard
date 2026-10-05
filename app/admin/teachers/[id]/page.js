@@ -200,23 +200,13 @@ export default function TeacherDetailsPage() {
         margin: "0 auto"
       }}
     >
-      <button
-        type="button"
-        onClick={() =>
-          router.push("/admin/teachers")
-        }
-        style={backButton}
-      >
-        ← Back to Teachers
-      </button>
-
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
           gap: 15,
-          marginTop: 24,
+          marginTop: 0,
           flexWrap: "wrap"
         }}
       >
@@ -240,11 +230,40 @@ export default function TeacherDetailsPage() {
           </p>
         </div>
 
-        <span style={statusStyle}>
-          {teacher.status || "active"}
-        </span>
-      </div>
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            alignItems: "center"
+          }}
+        >
+          <span style={statusStyle}>
+            {teacher.status || "active"}
+          </span>
 
+          <button
+            type="button"
+            onClick={() =>
+              router.push(
+                `/admin/teachers/${teacher.id}/edit`
+              )
+            }
+            style={editButton}
+          >
+            Edit
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              router.push("/admin/teachers")
+            }
+            style={backButton}
+          >
+            Back
+          </button>
+        </div>
+      </div>
       <div
         style={{
           display: "grid",
@@ -572,7 +591,6 @@ export default function TeacherDetailsPage() {
         )}
       </section>
 
-```jsx
       {/* Attendance */}
 
       <section
@@ -719,7 +737,6 @@ export default function TeacherDetailsPage() {
           </div>
         )}
       </section>
-```
 
             <div
         style={{
@@ -729,27 +746,6 @@ export default function TeacherDetailsPage() {
           flexWrap: "wrap"
         }}
       >
-        <button
-          type="button"
-          onClick={() =>
-            router.push(
-              `/admin/teachers/${teacher.id}/edit`
-            )
-          }
-          style={editButton}
-        >
-          Edit
-        </button>
-
-        <button
-          type="button"
-          onClick={() =>
-            router.push("/admin/teachers")
-          }
-          style={backActionButton}
-        >
-          Back
-        </button>
       </div>
     </div>
   );

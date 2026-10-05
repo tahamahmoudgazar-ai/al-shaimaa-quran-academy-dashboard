@@ -18,27 +18,73 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleLogin(e) {
-    e.preventDefault();
+async function handleLogin(e) {
+  e.preventDefault();
 
-    setError("");
-    setLoading(true);
+  setError("");
+  setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+  try {
+    const result = await Promise.race([
+      supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Login request timed out")), 10000)
+      ),
+    ]);
 
-    if (error) {
+    console.log("LOGIN RESULT:", result);
+
+    if (result.error) {
       setError("Invalid email or password.");
       setLoading(false);
       return;
     }
 
-    router.push("/admin");
-    router.refresh();
-  }
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
+    if (userError || !user) {
+      setError("Unable to load your account.");
+      setLoading(false);
+      return;
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError || !profile) {
+      setError("Account profile not found.");
+      setLoading(false);
+      return;
+    }
+
+    if (profile.role === "admin") {
+      router.push("/admin");
+    } else if (profile.role === "teacher") {
+      router.push("/teacher");
+    } else if (profile.role === "student") {
+      router.push("/student");
+    } else {
+      setError("Invalid account role.");
+      setLoading(false);
+      return;
+    }
+
+    router.refresh();
+  } catch (err) {
+    console.error("LOGIN ERROR:", err);
+    setError("Unable to sign in. Please try again.");
+    setLoading(false);
+  }
+}
   return (
     <main className={styles.page}>
       <section className={styles.card}>

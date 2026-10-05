@@ -48,8 +48,10 @@ schedule_date,
       );
     }
 
-    const rows = schedules || [];
 
+const rows = schedules || [];
+
+console.log("SCHEDULE RAW ROWS:", rows);
     const enrollmentRows = rows.map((item) => {
       const enrollment = Array.isArray(item.enrollments)
         ? item.enrollments[0]
@@ -60,6 +62,32 @@ schedule_date,
         enrollment,
       };
     });
+
+    const scheduleIds = rows.map((item) => item.id);
+
+    const { data: attendanceRows, error: attendanceError } =
+      scheduleIds.length
+        ? await supabase
+            .from("attendance")
+            .select("schedule_id, status")
+            .in("schedule_id", scheduleIds)
+        : { data: [], error: null };
+
+    if (attendanceError) {
+      console.error("Attendance query error:", attendanceError);
+
+      return NextResponse.json(
+        { error: attendanceError.message },
+        { status: 500 }
+      );
+    }
+
+    const attendanceMap = new Map(
+      (attendanceRows || []).map((item) => [
+        item.schedule_id,
+        item.status,
+      ])
+    );
 
     const studentIds = [
       ...new Set(
@@ -199,6 +227,9 @@ weekly_schedule_id: item.weekly_schedule_id || null,
           start_time: item.start_time,
           end_time: item.end_time,
           status: item.status,
+
+          attendance_status:
+            attendanceMap.get(item.id) || null,
 
           student_name:
             profileMap.get(student?.profile_id) ||

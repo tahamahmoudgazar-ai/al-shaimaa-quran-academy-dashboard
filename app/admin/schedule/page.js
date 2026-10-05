@@ -49,7 +49,16 @@ const [weeklyForm, setWeeklyForm] = useState({
   const [messageType, setMessageType] = useState("");
 
   const [search, setSearch] = useState("");
-  const [showForm, setShowForm] = useState(false);
+const [selectedMonth, setSelectedMonth] = useState(() => {
+  const now = new Date();
+
+  return `${now.getFullYear()}-${String(
+    now.getMonth() + 1
+  ).padStart(2, "0")}`;
+});
+
+const [generatingMonth, setGeneratingMonth] = useState(false); 
+ const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
@@ -67,7 +76,8 @@ const [weeklyForm, setWeeklyForm] = useState({
   }
 
   async function loadSchedules() {
-    try {
+console.log("LOAD SCHEDULES START");
+  try {
       setLoading(true);
 
       const res = await fetch("/api/schedule", {
@@ -82,7 +92,9 @@ const [weeklyForm, setWeeklyForm] = useState({
         );
       }
 
-      setSchedules(Array.isArray(data.schedules) ? data.schedules : []);
+console.log("SCHEDULE API DATA:", data);
+console.log("SCHEDULE COUNT FROM API:", data?.schedules?.length);
+setSchedules(data.schedules || []);
     } catch (error) {
       console.error("Load schedules error:", error);
 
@@ -94,8 +106,57 @@ const [weeklyForm, setWeeklyForm] = useState({
       setLoading(false);
     }
   }
+async function generateMonthlySchedule() {
+  if (!selectedMonth) {
+    showError("Please select a month.");
+    return;
+  }
 
-  async function loadWeeklySchedule(teacherId) {
+  try {
+    setGeneratingMonth(true);
+    setMessage("");
+    setMessageType("");
+
+    const res = await fetch("/api/schedule/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        month: selectedMonth,
+      }),
+    });
+
+    const data = await safeJson(res);
+
+    if (!res.ok) {
+      throw new Error(
+        data.error ||
+          `Failed to generate monthly schedule (${res.status})`
+      );
+    }
+
+    showSuccess(
+      data.message ||
+        "Monthly schedule generated successfully."
+    );
+
+    await loadSchedules();
+  } catch (error) {
+    console.error(
+      "Generate monthly schedule error:",
+      error
+    );
+
+    showError(
+      error.message ||
+        "Failed to generate monthly schedule."
+    );
+  } finally {
+    setGeneratingMonth(false);
+  }
+}
+   async function loadWeeklySchedule(teacherId) {
     if (!teacherId) {
       setWeeklySchedule([]);
       return;
@@ -327,11 +388,16 @@ async function deleteWeeklyClass(id) {
   }
 
   useEffect(() => {
-    async function initialize() {
+
+async function initialize() {
+      console.log("INITIALIZE START");
+
       await Promise.all([
         loadSchedules(),
         loadData(),
       ]);
+
+      console.log("INITIALIZE DONE");
     }
 
     initialize();
@@ -372,26 +438,154 @@ async function deleteWeeklyClass(id) {
         item.student_id === form.student_id
     );
 
-  const filteredSchedules =
-    schedules.filter((item) => {
-      const text = search.toLowerCase().trim();
+const filteredSchedules =
+  schedules.filter((item) => {
+    if (
+      selectedMonth &&
+      !item.schedule_date?.startsWith(
+        selectedMonth
+      )
+    ) {
+      return false;
+    }
 
-      if (!text) return true;
+    const text = search.toLowerCase().trim();
 
-      return (
-        item.course_name
-          ?.toLowerCase()
-          .includes(text) ||
-        item.student_name
-          ?.toLowerCase()
-          .includes(text) ||
-        item.teacher_name
-          ?.toLowerCase()
-          .includes(text) ||
-        item.schedule_date?.includes(text)
-      );
-    });
+    if (!text) return true;
 
+    return (
+      item.course_name
+        ?.toLowerCase()
+        .includes(text) ||
+      item.student_name
+        ?.toLowerCase()
+        .includes(text) ||
+      item.teacher_name
+        ?.toLowerCase()
+        .includes(text) ||
+      item.schedule_date?.includes(text)
+    );
+  });
+console.log("MONTH DEBUG:", {
+  selectedMonth,
+  schedulesCount: schedules.length,
+  firstSchedule: schedules[0],
+  filteredCount: filteredSchedules.length,
+});
+const monthlySchedule = [...filteredSchedules].sort(
+  (a, b) =>
+    new Date(a.schedule_date) -
+    new Date(b.schedule_date)
+);
+
+const [calendarYear, calendarMonth] =
+  selectedMonth.split("-").map(Number);
+
+const firstDayOfMonth = new Date(
+  calendarYear,
+  calendarMonth - 1,
+  1
+).getDay();
+
+const daysInMonth = new Date(
+  calendarYear,
+  calendarMonth,
+  0
+).getDate();
+
+const classesByDay = {};
+
+monthlySchedule.forEach((item) => {
+  const day = Number(item.schedule_date?.slice(-2));
+
+  if (!classesByDay[day]) {
+    classesByDay[day] = [];
+  }
+
+  classesByDay[day].push(item);
+});
+
+const calendarCells = Array.from(
+  { length: firstDayOfMonth + daysInMonth },
+  (_, index) => {
+    const day = index - firstDayOfMonth + 1;
+
+    return day > 0 ? day : null;
+  }
+);
+
+function getCalendarStatusClass(item) {
+  if (item.status === "cancelled") {
+    return "calendarClassCancelled";
+  }
+
+  if (item.attendance_status === "absent") {
+    return "calendarClassAbsent";
+  }
+
+  if (item.attendance_status === "late") {
+    return "calendarClassLate";
+  }
+
+  if (item.attendance_status === "excused") {
+    return "calendarClassExcused";
+  }
+
+  if (
+    item.attendance_status === "present" ||
+    item.attendance_status === "attended"
+  ) {
+    return "calendarClassAttended";
+  }
+
+  const classEnd = new Date(
+    `${item.schedule_date}T${item.end_time || "00:00:00"}`
+  );
+
+  if (classEnd < new Date()) {
+    return "calendarClassCompleted";
+  }
+
+  return "calendarClassScheduled";
+}
+
+function goToPreviousMonth() {
+  const date = new Date(
+    calendarYear,
+    calendarMonth - 2,
+    1
+  );
+
+  setSelectedMonth(
+    `${date.getFullYear()}-${String(
+      date.getMonth() + 1
+    ).padStart(2, "0")}`
+  );
+}
+
+function goToNextMonth() {
+  const date = new Date(
+    calendarYear,
+    calendarMonth,
+    1
+  );
+
+  setSelectedMonth(
+    `${date.getFullYear()}-${String(
+      date.getMonth() + 1
+    ).padStart(2, "0")}`
+  );
+}
+
+function goToCurrentMonth() {
+  const date = new Date();
+
+  setSelectedMonth(
+    `${date.getFullYear()}-${String(
+      date.getMonth() + 1
+    ).padStart(2, "0")}`
+  );
+}
   function selectCourse(courseId) {
     setForm((current) => ({
       ...current,
@@ -652,60 +846,61 @@ async function deleteWeeklyClass(id) {
     }
   }
 
-  return (
-    <div className="page">
-           <div className="weeklySection">
-  <div className="listHeader">
-    <div>
-      <h2>Weekly Schedule</h2>
-      <p>
-        View and manage recurring weekly classes by teacher.
-      </p>
-    </div>
+return (
+  <div className="page">
 
-    <div className="weeklyActions">
-      <select
-        value={selectedTeacherId}
-        onChange={(e) => {
-          const teacherId = e.target.value;
+    <div className="weeklySection">
+      <div className="sectionHeader">
+        <div>
+          <h2>Weekly Schedule</h2>
+          <p>
+            View and manage recurring weekly classes by teacher.
+          </p>
+        </div>
 
-          setSelectedTeacherId(teacherId);
-          setShowWeeklyForm(false);
-          loadWeeklySchedule(teacherId);
-        }}
-        className="teacherSelect"
-      >
-        <option value="">
-          Select teacher
-        </option>
+        <div className="weeklyActions">
+          <select
+            value={selectedTeacherId}
+            onChange={(e) => {
+              const teacherId = e.target.value;
 
-        {teachers.map((teacher) => (
-          <option
-            key={teacher.id}
-            value={teacher.id}
+              setSelectedTeacherId(teacherId);
+              setShowWeeklyForm(false);
+              loadWeeklySchedule(teacherId);
+            }}
+            className="teacherSelect"
           >
-            {teacher.name}
-          </option>
-        ))}
-      </select>
+            <option value="">
+              Select teacher
+            </option>
 
-      {selectedTeacherId && (
-        <button
-          type="button"
-          className="addButton"
-          onClick={() =>
-            setShowWeeklyForm(
-              (current) => !current
-            )
-          }
-        >
-          {showWeeklyForm
-            ? "Cancel"
-            : "+ Add Weekly Class"}
-        </button>
-      )}
-    </div>
-  </div>
+            {teachers.map((teacher) => (
+              <option
+                key={teacher.id}
+                value={teacher.id}
+              >
+                {teacher.name}
+              </option>
+            ))}
+          </select>
+
+          {selectedTeacherId && (
+            <button
+              type="button"
+              className="addButton"
+              onClick={() =>
+                setShowWeeklyForm(
+                  (current) => !current
+                )
+              }
+            >
+              {showWeeklyForm
+                ? "Cancel"
+                : "+ Add Weekly Class"}
+            </button>
+          )}
+        </div>
+      </div>
 
   {showWeeklyForm && selectedTeacherId && (
     <form
@@ -862,110 +1057,42 @@ async function deleteWeeklyClass(id) {
     </form>
   )}
 
-  {weeklyLoading ? (
-    <div className="emptyState">
-      Loading weekly schedule...
-    </div>
-  ) : !selectedTeacherId ? (
-    <div className="emptyState">
-      Select a teacher to view weekly classes.
-    </div>
-  ) : weeklySchedule.length === 0 ? (
-    <div className="emptyState">
-      No weekly classes found for this teacher.
-    </div>
-  ) : (
-    <div className="scheduleGrid">
-      {weeklySchedule.map((item) => (
-        <div
-          key={item.id}
-          className="classCard"
-        >
-          <div className="cardTop">
-            <div>
-              <h3>
-                {item.courseName}
-              </h3>
-
-              <div className="person">
-                👩‍🎓{" "}
-                <span>Student:</span>{" "}
-                <strong>
-                  {item.studentName}
-                </strong>
-              </div>
-
-              <div className="person">
-                👨‍🏫{" "}
-                <span>Teacher:</span>{" "}
-                <strong>
-                  {item.teacherName}
-                </strong>
-              </div>
-            </div>
-
-            <span className="status">
-              Weekly
-            </span>
-          </div>
-
-          <div className="infoGrid">
-            <div className="info">
-              <span>DAY</span>
-              <strong>
-                {[
-                  "Sunday",
-                  "Monday",
-                  "Tuesday",
-                  "Wednesday",
-                  "Thursday",
-                  "Friday",
-                  "Saturday",
-                ][item.day_of_week] ||
-                  "Unknown"}
-              </strong>
-            </div>
-
-            <div className="info">
-              <span>TIME</span>
-              <strong>
-                🕐{" "}
-                {item.start_time?.slice(
-                  0,
-                  5
-                )}{" "}
-                -{" "}
-                {item.end_time?.slice(
-                  0,
-                  5
-                )}
-              </strong>
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginTop: "15px",
-            }}
-          >
-            <button
-              type="button"
-              className="deleteButton"
-              onClick={() =>
-                deleteWeeklyClass(item.id)
-              }
-            >
-              Remove
-            </button>
-          </div>
+{weeklyLoading ? (
+  <div className="emptyState">
+    Loading weekly schedule...
+  </div>
+) : !selectedTeacherId ? (
+  <div className="emptyState">
+    Select a teacher to view weekly classes.
+  </div>
+) : weeklySchedule.length === 0 ? (
+  <div className="emptyState">
+    No weekly classes found for this teacher.
+  </div>
+) : (
+  <div className="weeklyClasses">
+    {weeklySchedule.map((item) => (
+      <div key={item.id} className="classCard">
+        <div>
+          <strong>{item.day_of_week}</strong>
         </div>
-      ))}
-    </div>
-  )}
-</div>      
 
+        <div>
+          {item.start_time?.slice(0, 5)} -{" "}
+          {item.end_time?.slice(0, 5)}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => deleteWeeklyClass(item.id)}
+        >
+          Remove
+        </button>
+      </div>
+    ))}
+  </div>
+)}
+      </div>
       <div className="header">
         <div>
           <div className="eyebrow">
@@ -1235,23 +1362,79 @@ async function deleteWeeklyClass(id) {
             </p>
           </div>
 
-          <div className="searchBox">
-            <span>⌕</span>
+<div className="calendarToolbar">
+  <div className="calendarNavigation">
+    <button
+      type="button"
+      className="secondaryButton"
+      onClick={goToPreviousMonth}
+    >
+      Previous
+    </button>
 
-            <input
-              type="text"
-              placeholder="Search schedule..."
-              value={search}
-              onChange={(e) =>
-                setSearch(
-                  e.target.value
-                )
-              }
-            />
-          </div>
-        </div>
+    <button
+      type="button"
+      className="secondaryButton"
+      onClick={goToCurrentMonth}
+    >
+      Today
+    </button>
 
-        {loading ? (
+    <button
+      type="button"
+      className="secondaryButton"
+      onClick={goToNextMonth}
+    >
+      Next
+    </button>
+  </div>
+
+  <div className="calendarTitle">
+    {new Date(
+      calendarYear,
+      calendarMonth - 1,
+      1
+    ).toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    })}
+  </div>
+
+  <input
+    type="month"
+    value={selectedMonth}
+    onChange={(e) =>
+      setSelectedMonth(e.target.value)
+    }
+  />
+
+  <button
+    type="button"
+    className="addButton"
+    onClick={generateMonthlySchedule}
+    disabled={generatingMonth}
+  >
+    {generatingMonth
+      ? "Generating..."
+      : "Generate Month"}
+  </button>
+
+  <div className="searchBox">
+    <span>⌕</span>
+
+    <input
+      type="text"
+      placeholder="Search schedule..."
+      value={search}
+      onChange={(e) =>
+        setSearch(e.target.value)
+      }
+    />
+  </div>
+</div>
+</div>
+
+{loading ? (
           <div className="emptyState">
             Loading schedule...
           </div>
@@ -1263,128 +1446,90 @@ async function deleteWeeklyClass(id) {
               : "No classes match your search."}
           </div>
         ) : (
-          <div className="scheduleGrid">
-            {filteredSchedules.map(
-              (item) => (
-                <div
-                  key={item.id}
-                  className="classCard"
-                >
-                  <div className="cardTop">
-                    <div>
-                      <h3>
-                        {item.course_name}
-                      </h3>
-
-                      <div className="person">
-                        👩‍🎓{" "}
-                        <span>
-                          Student:
-                        </span>{" "}
-                        <strong>
-                          {item.student_name}
-                        </strong>
-                      </div>
-
-                      <div className="person">
-                        👨‍🏫{" "}
-                        <span>
-                          Teacher:
-                        </span>{" "}
-                        <strong>
-                          {item.teacher_name}
-                        </strong>
-                      </div>
-                    </div>
-
-                    <span className="status">
-                      {item.status ||
-                        "scheduled"}
-                    </span>
+          <div className="monthlyCalendar">
+            <div className="calendarWeekdays">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+                (day) => (
+                  <div key={day} className="calendarWeekday">
+                    {day}
                   </div>
+                )
+              )}
+            </div>
 
-                  <div className="infoGrid">
-                    <div className="info">
-                      <span>
-                        DATE
-                      </span>
+            <div className="calendarGrid">
+              {calendarCells.map((day, index) => {
+                const dayClasses = day
+                  ? classesByDay[day] || []
+                  : [];
 
-                      <strong>
-                        📅{" "}
-                        {item.schedule_date}
-                      </strong>
-                    </div>
-
-                    <div className="info">
-                      <span>
-                        TIME
-                      </span>
-
-                      <strong>
-                        🕐{" "}
-                        {item.start_time?.slice(
-                          0,
-                          5
-                        )}{" "}
-                        -{" "}
-                        {item.end_time?.slice(
-                          0,
-                          5
-                        )}
-                      </strong>
-                    </div>
-                  </div>
-
+                return (
                   <div
-  className="cardActions"
-  style={{
-    display: "flex",
-    gap: "10px",
-    marginTop: "16px",
-    paddingTop: "12px",
-    borderTop: "1px solid #ddd",
-  }}
->
-  <button
-    type="button"
-    onClick={() => startEdit(item)}
-    style={{
-      display: "inline-block",
-      padding: "10px 20px",
-      background: "#347fae",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      cursor: "pointer",
-      fontWeight: "700",
-    }}
-  >
-    Edit
-  </button>
+                    key={index}
+                    className={`calendarCell ${
+                      day ? "" : "calendarEmpty"
+                    }`}
+                  >
+                    {day && (
+                      <>
+                        <div className="calendarDate">
+                          {day}
+                        </div>
 
-  <button
-    type="button"
-    onClick={() => deleteClass(item.id)}
-    style={{
-      display: "inline-block",
-      padding: "10px 20px",
-      background: "#d95353",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      cursor: "pointer",
-      fontWeight: "700",
-    }}
-  >
-    Delete
-  </button>
-</div>
+                        <div className="calendarClasses">
+                          {dayClasses.map((item) => (
+                            <div
+                              className={`calendarClass ${getCalendarStatusClass(item)}`}
+                              key={item.id}
+                            >
+                              <strong>
+                                {item.start_time?.slice(0, 5)} -{" "}
+                                {item.end_time?.slice(0, 5)}
+                              </strong>
 
-                </div>
-              )
-            )}
+                              <span>
+                                {item.student_name}
+                              </span>
+
+                              <span>
+                                {item.teacher_name}
+                              </span>
+
+                              <span>
+                                {item.course_name}
+                              </span>
+
+                              <div className="calendarActions">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    startEdit(item)
+                                  }
+                                >
+                                  Edit
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    deleteClass(item.id)
+                                  }
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
+
       </div>
 
       <style jsx>{`
@@ -1719,6 +1864,235 @@ async function deleteWeeklyClass(id) {
 
         .deleteButton:hover {
           background: #c43f3f;
+        }
+
+        .monthlyCalendar {
+          width: 100%;
+          background: #fff;
+          border: 1px solid #e1edf4;
+          border-radius: 14px;
+          overflow: hidden;
+        }
+
+        .calendarWeekdays {
+          display: grid;
+          grid-template-columns: repeat(7, minmax(0, 1fr));
+          background: #f3f8fb;
+          border-bottom: 1px solid #dfeaf1;
+        }
+
+        .calendarWeekday {
+          padding: 13px 10px;
+          text-align: center;
+          color: #456579;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .calendarGrid {
+          display: grid;
+          grid-template-columns: repeat(7, minmax(0, 1fr));
+        }
+
+        .calendarCell {
+          min-height: 150px;
+          padding: 10px;
+          border-right: 1px solid #e8eff4;
+          border-bottom: 1px solid #e8eff4;
+          background: #fff;
+        }
+
+        .calendarCell:nth-child(7n) {
+          border-right: none;
+        }
+
+        .calendarEmpty {
+          background: #fafcfd;
+        }
+
+        .calendarDate {
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 8px;
+          border-radius: 50%;
+          color: #294b63;
+          background: #f3f8fb;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .calendarClasses {
+          display: flex;
+          flex-direction: column;
+          gap: 7px;
+        }
+
+        .calendarClass {
+          padding: 8px;
+          border: 1px solid #dceaf2;
+          border-left: 3px solid #347fae;
+          border-radius: 8px;
+          background: #f8fbfd;
+        }
+
+        .calendarClassScheduled {
+          background: #d9f0ff;
+          border-color: #75bce8;
+          border-left: 5px solid #1688c7;
+          color: #07527d;
+        }
+
+        .calendarClassCompleted {
+          background: #e9ecef;
+          border-color: #b8c0c8;
+          border-left: 5px solid #697681;
+          color: #39434c;
+        }
+
+        .calendarClassAttended {
+          background: #d9f7e6;
+          border-color: #7bd5a2;
+          border-left: 5px solid #149447;
+          color: #096331;
+        }
+
+        .calendarClassAbsent {
+          background: #ffe0e0;
+          border-color: #ef8b8b;
+          border-left: 5px solid #d62828;
+          color: #9b1515;
+        }
+
+        .calendarClassLate {
+          background: #fff0cc;
+          border-color: #e5b84f;
+          border-left: 5px solid #e08a00;
+          color: #8a5200;
+        }
+
+        .calendarClassExcused {
+          background: #eadcff;
+          border-color: #b991eb;
+          border-left: 5px solid #7b3fc6;
+          color: #54258b;
+        }
+
+        .calendarClassCancelled {
+          background: #ffd6df;
+          border-color: #df7892;
+          border-left: 5px solid #a61e46;
+          color: #761331;
+        }
+
+        .calendarClassScheduled strong,
+        .calendarClassScheduled span,
+        .calendarClassCompleted strong,
+        .calendarClassCompleted span,
+        .calendarClassAttended strong,
+        .calendarClassAttended span,
+        .calendarClassAbsent strong,
+        .calendarClassAbsent span,
+        .calendarClassLate strong,
+        .calendarClassLate span,
+        .calendarClassExcused strong,
+        .calendarClassExcused span,
+        .calendarClassCancelled strong,
+        .calendarClassCancelled span {
+          color: inherit;
+        }
+
+        .calendarClass strong,
+        .calendarClass span {
+          display: block;
+        }
+
+        .calendarClass strong {
+          margin-bottom: 4px;
+          color: #24506c;
+          font-size: 11px;
+        }
+
+        .calendarClass span {
+          margin-top: 2px;
+          color: #667f90;
+          font-size: 10px;
+        }
+
+        .calendarActions {
+          display: flex;
+          gap: 5px;
+          margin-top: 7px;
+        }
+
+        .calendarActions button {
+          padding: 4px 7px;
+          border: 1px solid #d4e2ea;
+          border-radius: 6px;
+          background: #fff;
+          color: #315d77;
+          font-family: inherit;
+          font-size: 9px;
+          cursor: pointer;
+        }
+
+        .calendarActions button:hover {
+          background: #f1f7fa;
+        }
+
+        @media (max-width: 900px) {
+          .calendarCell {
+            min-height: 130px;
+            padding: 7px;
+          }
+
+          .calendarClass {
+            padding: 6px;
+          }
+
+          .calendarClass span {
+            font-size: 9px;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .calendarWeekday {
+            padding: 10px 4px;
+            font-size: 10px;
+          }
+
+          .calendarCell {
+            min-height: 105px;
+            padding: 5px;
+          }
+
+          .calendarDate {
+            width: 24px;
+            height: 24px;
+            font-size: 10px;
+          }
+
+          .calendarClass {
+            border-left-width: 2px;
+          }
+
+          .calendarClass strong {
+            font-size: 9px;
+          }
+
+          .calendarClass span {
+            font-size: 8px;
+          }
+
+          .calendarActions {
+            flex-direction: column;
+          }
+
+          .calendarActions button {
+            width: 100%;
+          }
         }
 
         .emptyState {

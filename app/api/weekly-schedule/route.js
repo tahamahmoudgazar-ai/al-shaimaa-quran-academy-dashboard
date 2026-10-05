@@ -121,7 +121,8 @@ export async function POST(request) {
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+"Content-Type": "application/json",
+"Cookie": request.headers.get("cookie") || ""
           },
           body: JSON.stringify({
             month: currentMonth

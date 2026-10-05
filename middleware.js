@@ -61,9 +61,33 @@ export async function middleware(request) {
     }
   }
 
+  // Protect /student
+  if (pathname.startsWith("/student")) {
+    // Not logged in
+    if (!user) {
+      return NextResponse.redirect(
+        new URL("/login", request.url)
+      );
+    }
+
+    // Get user's role
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    // Only students can access /student
+    if (!profile || profile.role !== "student") {
+      return NextResponse.redirect(
+        new URL("/login", request.url)
+      );
+    }
+  }
+
   return response;
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/student/:path*"],
 };
