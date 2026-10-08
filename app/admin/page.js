@@ -4,6 +4,9 @@ import { createClient } from "@supabase/supabase-js";
 import StatCard from "../../components/StatCard";
 import styles from "./admin.module.css";
 
+export const dynamic = "force-dynamic";
+
+
 function getSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
