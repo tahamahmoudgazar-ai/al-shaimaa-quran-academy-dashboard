@@ -6,3 +6,5 @@ node_modules/
 
 *.backup*
 *.jso
+.vercel
+.env*

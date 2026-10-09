@@ -1033,108 +1033,28 @@
 
 /* Teacher Monthly Calendar */
 
-/* Fix: status classes on calendar cards must not inherit badge layout */
-
-.teacherCalendarClass.statusScheduled,
-.teacherCalendarClass.statusCompleted,
-.teacherCalendarClass.statusAttended,
-.teacherCalendarClass.statusAbsent,
-.teacherCalendarClass.statusLate,
-.teacherCalendarClass.statusExcused,
-.teacherCalendarClass.statusCancelled {
-  display: block;
-  min-width: 0;
-  width: auto;
-  padding: 8px;
-  border-radius: 8px;
-  font-size: inherit;
-  font-weight: normal;
-  white-space: normal;
-  align-items: initial;
-  justify-content: initial;
-}
-
-/* Teacher Calendar Status Colors */
-
-.teacherCalendarClass.statusScheduled {
-  background: #eaf6ff;
-  border-color: #b9dff2;
-  border-left-color: #2186b9;
-  color: #145b7d;
-}
-
-.teacherCalendarClass.statusCompleted {
-  background: #f2f4f6;
-  border-color: #d9dfe4;
-  border-left-color: #718096;
-  color: #52606d;
-}
-
-.teacherCalendarClass.statusAttended {
-  background: #eaf8f0;
-  border-color: #c5ead4;
-  border-left-color: #22a06b;
-  color: #176b49;
-}
-
-.teacherCalendarClass.statusAbsent {
-  background: #fff0f0;
-  border-color: #f1c7c7;
-  border-left-color: #d64545;
-  color: #a92d2d;
-}
-
-.teacherCalendarClass.statusLate {
-  background: #fff7e8;
-  border-color: #f0d8a8;
-  border-left-color: #d98b18;
-  color: #9a5b06;
-}
-
-.teacherCalendarClass.statusExcused {
-  background: #f4edff;
-  border-color: #d9c6f5;
-  border-left-color: #8e5ac7;
-  color: #633b91;
-}
-
-.teacherCalendarClass.statusCancelled {
-  background: #fdf0f4;
-  border-color: #edc8d5;
-  border-left-color: #b23a62;
-  color: #8d2749;
-}
-
-.teacherCalendarClass.statusScheduled strong,
-.teacherCalendarClass.statusScheduled > span,
-.teacherCalendarClass.statusCompleted strong,
-.teacherCalendarClass.statusCompleted > span,
-.teacherCalendarClass.statusAttended strong,
-.teacherCalendarClass.statusAttended > span,
-.teacherCalendarClass.statusAbsent strong,
-.teacherCalendarClass.statusAbsent > span,
-.teacherCalendarClass.statusLate strong,
-.teacherCalendarClass.statusLate > span,
-.teacherCalendarClass.statusExcused strong,
-.teacherCalendarClass.statusExcused > span,
-.teacherCalendarClass.statusCancelled strong,
-.teacherCalendarClass.statusCancelled > span {
-  color: inherit;
-}
-
-
-
 .teacherCalendar {
   width: 100%;
-  background: #ffffff;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  box-sizing: border-box;
   border: 1px solid #e5edf2;
   border-radius: 12px;
-  overflow: hidden;
+  background: #ffffff;
+}
+
+.teacherCalendarWeekdays,
+.teacherCalendarGrid {
+  width: 100%;
+  min-width: 1400px;
+  box-sizing: border-box;
 }
 
 .teacherCalendarWeekdays {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(200px, 1fr));
   background: #f8fbfd;
   border-bottom: 1px solid #e3ebf0;
 }
@@ -1145,16 +1065,19 @@
   color: #607d8d;
   font-size: 11px;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .teacherCalendarGrid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(200px, 1fr));
 }
 
 .teacherCalendarCell {
-  min-height: 145px;
-  padding: 8px;
+  min-width: 0;
+  min-height: 170px;
+  padding: 9px;
+  box-sizing: border-box;
   background: #ffffff;
   border-right: 1px solid #e8eef2;
   border-bottom: 1px solid #e8eef2;
@@ -1169,12 +1092,12 @@
 }
 
 .teacherCalendarDate {
-  width: 27px;
-  height: 27px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 7px;
+  margin-bottom: 8px;
   border-radius: 50%;
   background: #f1f7fa;
   color: #123b5d;
@@ -1185,259 +1108,363 @@
 .teacherCalendarClasses {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
 }
 
 .teacherCalendarClass {
-  padding: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  box-sizing: border-box;
   border: 1px solid #dce8ee;
-  border-left: 3px solid #347fae;
+  border-left: 5px solid #347fae;
   border-radius: 8px;
-  background: #f9fcfd;
 }
 
-.teacherCalendarClass strong,
-.teacherCalendarClass > span {
-  display: block;
+.teacherCalendarClassInner {
+  display: grid;
+  grid-template-columns:
+    70px
+    minmax(90px, 1.2fr)
+    minmax(100px, 1fr);
+  grid-template-areas: "time student course";
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
 }
 
-.teacherCalendarClass strong {
-  margin-bottom: 4px;
-  color: #24506c;
-  font-size: 10px;
-  font-weight: 800;
-}
-
-.teacherCalendarClass > span {
-  margin-top: 3px;
-  color: #607785;
+.teacherCalendarTime {
+  grid-area: time;
+  min-width: 0;
+  color: inherit;
   font-size: 9px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
-.teacherCalendarClass .statusScheduled,
-.teacherCalendarClass .statusCompleted,
-.teacherCalendarClass .statusAttended,
-.teacherCalendarClass .statusAbsent,
-.teacherCalendarClass .statusCancelled {
+.teacherCalendarTime span {
+  margin: 0 2px;
+}
+
+.teacherCalendarStudent {
+  grid-area: student;
+  min-width: 0;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.teacherCalendarCourse {
+  grid-area: course;
+  min-width: 0;
+  color: inherit;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.teacherCalendarStatus {
+  grid-area: status;
   display: inline-flex;
-  margin-top: 6px;
+  align-items: center;
+  justify-content: center;
+  min-width: 62px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  color: inherit;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
-@media (max-width: 900px) {
-  .teacherCalendarCell {
-    min-height: 125px;
-    padding: 6px;
-  }
-
-  .teacherCalendarClass {
-    padding: 6px;
-  }
-
-  .teacherCalendarClass strong {
-    font-size: 9px;
-  }
-
-  .teacherCalendarClass > span {
-    font-size: 8px;
-  }
-}
-
-@media (max-width: 600px) {
-  .teacherCalendarWeekday {
-    padding: 9px 3px;
-    font-size: 9px;
-  }
-
-  .teacherCalendarCell {
-    min-height: 105px;
-    padding: 4px;
-  }
-
-  .teacherCalendarDate {
-    width: 23px;
-    height: 23px;
-    font-size: 9px;
-  }
-
-  .teacherCalendarClass {
-    padding: 5px;
-    border-left-width: 2px;
-  }
-
-  .teacherCalendarClass strong {
-    font-size: 8px;
-  }
-
-  .teacherCalendarClass > span {
-    font-size: 7px;
-  }
-
-  .teacherCalendarClass .statusScheduled,
-  .teacherCalendarClass .statusCompleted,
-  .teacherCalendarClass .statusAttended,
-  .teacherCalendarClass .statusAbsent,
-  .teacherCalendarClass .statusCancelled {
-    min-width: 0;
-    width: 100%;
-    padding: 4px 5px;
-    font-size: 8px;
-  }
-}
-
-/* Monthly Schedule - Mobile */
-
-@media (max-width: 700px) {
-  .monthControls {
-    width: 100%;
-    justify-content: center;
-    margin-top: 6px;
-  }
-
-  .monthTitle {
-    min-width: 130px;
-  }
-
-  .scheduleLegend {
-    gap: 9px 14px;
-  }
-
-  .scheduleHeader {
-    display: none;
-  }
-
-  .scheduleRow {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    padding: 15px;
-    min-height: auto;
-  }
-
-  .scheduleRow > div:nth-child(1) {
-    grid-column: 1;
-  }
-
-  .scheduleRow > div:nth-child(2) {
-    grid-column: 2;
-    text-align: right;
-  }
-
-  .scheduleRow > div:nth-child(3) {
-    grid-column: 1 / -1;
-  }
-
-  .scheduleRow > div:nth-child(4) {
-    grid-column: 1;
-  }
-
-  .scheduleRow > div:nth-child(5) {
-    grid-column: 2;
-    text-align: right;
-  }
-
-  .scheduleTime {
-    text-align: right;
-  }
-
-  .scheduleCourse {
-    align-self: center;
-  }
-
-  .statusScheduled,
-  .statusCompleted,
-  .statusAttended,
-  .statusAbsent,
-  .statusCancelled {
-    min-width: 70px;
-  }
-}
-
-@media (max-width: 500px) {
-  .scheduleLegend span {
-    font-size: 10px;
-  }
-
-  .scheduleRow {
-    gap: 10px;
-    padding: 14px;
-  }
-
-  .scheduleDate strong,
-  .scheduleStudent strong {
-    font-size: 12px;
-  }
-
-  .scheduleTime,
-  .scheduleCourse {
-    font-size: 11px;
-  }
-}
-
-
-/* Strong Teacher Calendar Status Colors */
+/* Status colors */
 
 .teacherCalendarClass.statusScheduled {
-  background: #d9f0ff !important;
-  border: 1px solid #75bce8 !important;
-  border-left: 5px solid #1688c7 !important;
-  color: #07527d !important;
+  background: #d9f0ff;
+  border-color: #75bce8;
+  border-left-color: #1688c7;
+  color: #07527d;
 }
 
 .teacherCalendarClass.statusCompleted {
-  background: #e9ecef !important;
-  border: 1px solid #b8c0c8 !important;
-  border-left: 5px solid #697681 !important;
-  color: #39434c !important;
+  background: #e9ecef;
+  border-color: #b8c0c8;
+  border-left-color: #697681;
+  color: #39434c;
 }
 
 .teacherCalendarClass.statusAttended {
-  background: #d9f7e6 !important;
-  border: 1px solid #7bd5a2 !important;
-  border-left: 5px solid #149447 !important;
-  color: #096331 !important;
+  background: #d9f7e6;
+  border-color: #7bd5a2;
+  border-left-color: #149447;
+  color: #096331;
 }
 
 .teacherCalendarClass.statusAbsent {
-  background: #ffe0e0 !important;
-  border: 1px solid #ef8b8b !important;
-  border-left: 5px solid #d62828 !important;
-  color: #9b1515 !important;
+  background: #ffe0e0;
+  border-color: #ef8b8b;
+  border-left-color: #d62828;
+  color: #9b1515;
 }
 
 .teacherCalendarClass.statusLate {
-  background: #fff0cc !important;
-  border: 1px solid #e5b84f !important;
-  border-left: 5px solid #e08a00 !important;
-  color: #8a5200 !important;
+  background: #fff0cc;
+  border-color: #e5b84f;
+  border-left-color: #e08a00;
+  color: #8a5200;
 }
 
 .teacherCalendarClass.statusExcused {
-  background: #eadcff !important;
-  border: 1px solid #b991eb !important;
-  border-left: 5px solid #7b3fc6 !important;
-  color: #54258b !important;
+  background: #eadcff;
+  border-color: #b991eb;
+  border-left-color: #7b3fc6;
+  color: #54258b;
 }
 
 .teacherCalendarClass.statusCancelled {
-  background: #ffd6df !important;
-  border: 1px solid #df7892 !important;
-  border-left: 5px solid #a61e46 !important;
-  color: #761331 !important;
+  background: #ffd6df;
+  border-color: #df7892;
+  border-left-color: #a61e46;
+  color: #761331;
 }
 
-.teacherCalendarClass.statusScheduled strong,
-.teacherCalendarClass.statusCompleted strong,
-.teacherCalendarClass.statusAttended strong,
-.teacherCalendarClass.statusAbsent strong,
-.teacherCalendarClass.statusLate strong,
-.teacherCalendarClass.statusExcused strong,
-.teacherCalendarClass.statusCancelled strong,
-.teacherCalendarClass.statusScheduled span,
-.teacherCalendarClass.statusCompleted span,
-.teacherCalendarClass.statusAttended span,
-.teacherCalendarClass.statusAbsent span,
-.teacherCalendarClass.statusLate span,
-.teacherCalendarClass.statusExcused span,
-.teacherCalendarClass.statusCancelled span {
-  color: inherit !important;
+.teacherCalendarClass .teacherCalendarStatus {
+  border: none;
+  background: transparent;
+  margin: 0;
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+  .teacherCalendarWeekdays,
+  .teacherCalendarGrid {
+    min-width: 1400px;
+  }
+
+  .teacherCalendarCell {
+    min-height: 150px;
+    padding: 7px;
+  }
+
+  .teacherCalendarClass {
+    padding: 8px;
+  }
+
+  .teacherCalendarClassInner {
+    grid-template-columns:
+      68px
+      minmax(90px, 1.2fr)
+      minmax(100px, 1fr);
+    grid-template-areas: "time student course";
+    gap: 7px;
+  }
+
+  .teacherCalendarTime {
+    font-size: 8px;
+  }
+
+  .teacherCalendarStudent {
+    font-size: 11px;
+  }
+
+  .teacherCalendarCourse {
+    font-size: 8px;
+  }
+
+  .teacherCalendarStatus {
+    min-width: 58px;
+    padding: 4px 5px;
+    font-size: 7px;
+  }
+}
+
+
+/* Final fix: keep all class information inside the same card */
+
+.teacherCalendarClass {
+  overflow: hidden !important;
+}
+
+.teacherCalendarClassInner {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.teacherCalendarTime {
+  flex: 0 0 70px !important;
+  min-width: 70px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+}
+
+.teacherCalendarStudent {
+  flex: 0 0 28% !important;
+  min-width: 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.teacherCalendarCourse {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+@media (max-width: 600px) {
+  .teacherCalendarTime {
+    flex-basis: 68px !important;
+    min-width: 68px !important;
+    font-size: 8px !important;
+  }
+
+  .teacherCalendarStudent {
+    flex-basis: 30% !important;
+    font-size: 11px !important;
+  }
+
+  .teacherCalendarCourse {
+    font-size: 8px !important;
+  }
+}
+
+
+/* Final width fix for full one-line class cards */
+
+.teacherCalendarWeekdays,
+.teacherCalendarGrid {
+  min-width: 1960px !important;
+  grid-template-columns: repeat(7, minmax(280px, 1fr)) !important;
+}
+
+.teacherCalendarCell {
+  min-width: 280px !important;
+}
+
+.teacherCalendarClass {
+  width: 100% !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+}
+
+.teacherCalendarClassInner {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+}
+
+.teacherCalendarTime {
+  flex: 0 0 auto !important;
+  min-width: 68px !important;
+  white-space: nowrap !important;
+}
+
+.teacherCalendarStudent {
+  flex: 0 0 auto !important;
+  min-width: 70px !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  font-size: 12px !important;
+}
+
+.teacherCalendarCourse {
+  flex: 1 1 auto !important;
+  min-width: 110px !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  font-size: 9px !important;
+}
+
+@media (max-width: 600px) {
+  .teacherCalendarWeekdays,
+  .teacherCalendarGrid {
+    min-width: 1960px !important;
+  }
+
+  .teacherCalendarCell {
+    min-width: 280px !important;
+  }
+
+  .teacherCalendarStudent {
+    font-size: 11px !important;
+  }
+
+  .teacherCalendarCourse {
+    font-size: 8px !important;
+  }
+}
+
+
+/* Stronger Teacher Calendar Status Contrast */
+
+.teacherCalendarClass.statusScheduled {
+  background: #c7e7ff !important;
+  border-color: #4fa8dc !important;
+  border-left-color: #0878b5 !important;
+  color: #064b70 !important;
+}
+
+.teacherCalendarClass.statusCompleted {
+  background: #d2d6da !important;
+  border-color: #8a949e !important;
+  border-left-color: #4b5560 !important;
+  color: #28323a !important;
+}
+
+.teacherCalendarClass.statusAttended {
+  background: #c8f2d8 !important;
+  border-color: #55c77d !important;
+  border-left-color: #168a45 !important;
+  color: #075b2d !important;
+}
+
+.teacherCalendarClass.statusAbsent {
+  background: #ffd0d0 !important;
+  border-color: #e66a6a !important;
+  border-left-color: #c21f1f !important;
+  color: #8f1111 !important;
+}
+
+.teacherCalendarClass.statusLate {
+  background: #ffe3a8 !important;
+  border-color: #e4a52b !important;
+  border-left-color: #c87500 !important;
+  color: #744500 !important;
+}
+
+.teacherCalendarClass.statusExcused {
+  background: #dfc9ff !important;
+  border-color: #a77ad9 !important;
+  border-left-color: #7438b5 !important;
+  color: #4d237d !important;
+}
+
+.teacherCalendarClass.statusCancelled {
+  background: #ffc4d2 !important;
+  border-color: #d65b79 !important;
+  border-left-color: #9b1d42 !important;
+  color: #70152f !important;
 }

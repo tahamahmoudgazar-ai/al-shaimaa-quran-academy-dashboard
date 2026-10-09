@@ -594,29 +594,26 @@ const getScheduleStatus = (schedule) => {
                           key={schedule.id}
                           className={`${styles.teacherCalendarClass} ${status.className}`}
                         >
-                          <strong>
-                            {schedule.start_time
-                              ? schedule.start_time.slice(0, 5)
-                              : "—"}{" "}
-                            -{" "}
-                            {schedule.end_time
-                              ? schedule.end_time.slice(0, 5)
-                              : "—"}
-                          </strong>
+                          <div className={styles.teacherCalendarClassInner}>
+                            <div className={styles.teacherCalendarTime}>
+                              {schedule.start_time
+                                ? schedule.start_time.slice(0, 5)
+                                : "—"}
+                              <span>–</span>
+                              {schedule.end_time
+                                ? schedule.end_time.slice(0, 5)
+                                : "—"}
+                            </div>
 
-                          <span>
-                            {schedule.student_name}
-                          </span>
+                            <div className={styles.teacherCalendarStudent}>
+                              {schedule.student_name || "Unknown Student"}
+                            </div>
 
-                          <span>
-                            {schedule.course_name}
-                          </span>
+                            <div className={styles.teacherCalendarCourse}>
+                              {schedule.course_name || "Unknown Course"}
+                            </div>
 
-                          <span
-                            className={status.className}
-                          >
-                            {status.label}
-                          </span>
+                          </div>
                         </div>
                       );
                     })}

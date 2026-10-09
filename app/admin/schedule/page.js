@@ -1263,16 +1263,35 @@ return (
             <label>
               Date
               <input
-                type="date"
+                type="text"
                 required
-                value={form.schedule_date}
-                onChange={(e) =>
+                placeholder="DD/MM/YYYY"
+                value={
+                  form.schedule_date
+                    ? form.schedule_date.split("-").reverse().join("/")
+                    : ""
+                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const parts = value.split("/");
+
+                  let isoDate = "";
+                  if (
+                    parts.length === 3 &&
+                    parts[0].length === 2 &&
+                    parts[1].length === 2 &&
+                    parts[2].length === 4
+                  ) {
+                    isoDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                  }
+
                   setForm((current) => ({
                     ...current,
-                    schedule_date:
-                      e.target.value,
-                  }))
-                }
+                    schedule_date: isoDate,
+                  }));
+                }}
+                pattern="\\d{2}/\\d{2}/\\d{4}"
+                title="Enter date as DD/MM/YYYY"
               />
             </label>
 
@@ -1482,41 +1501,35 @@ return (
                               className={`calendarClass ${getCalendarStatusClass(item)}`}
                               key={item.id}
                             >
-                              <strong>
-                                {item.start_time?.slice(0, 5)} -{" "}
-                                {item.end_time?.slice(0, 5)}
-                              </strong>
+                              <div className="calendarClassTopRow">
+                                <strong>
+                                  {item.start_time?.slice(0, 5)} -{" "}
+                                  {item.end_time?.slice(0, 5)}
+                                </strong>
+                                <span>{item.student_name}</span>
+                                <span>{item.teacher_name}</span>
+                              </div>
 
-                              <span>
-                                {item.student_name}
-                              </span>
+                              <div className="calendarClassBottomRow">
+                                <span className="calendarCourse">
+                                  {item.course_name}
+                                </span>
 
-                              <span>
-                                {item.teacher_name}
-                              </span>
+                                <div className="calendarActions">
+                                  <button
+                                    type="button"
+                                    onClick={() => startEdit(item)}
+                                  >
+                                    Edit
+                                  </button>
 
-                              <span>
-                                {item.course_name}
-                              </span>
-
-                              <div className="calendarActions">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    startEdit(item)
-                                  }
-                                >
-                                  Edit
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    deleteClass(item.id)
-                                  }
-                                >
-                                  Delete
-                                </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => deleteClass(item.id)}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           ))}
@@ -1938,6 +1951,75 @@ return (
           background: #f8fbfd;
         }
 
+
+        .calendarClassTopRow > span {
+          font-size: 14px !important;
+          font-weight: 700 !important;
+          line-height: 1.4 !important;
+        }
+
+        .calendarClassBottomRow .calendarCourse {
+          font-size: 14px !important;
+          font-weight: 700 !important;
+          line-height: 1.4 !important;
+        }
+
+        /* Keep each class card on exactly two rows */
+        .calendarClass {
+          display: block;
+          width: max-content;
+          min-width: max-content;
+          white-space: nowrap;
+        }
+
+        .calendarClassTopRow {
+          display: flex;
+          align-items: center;
+          flex-wrap: nowrap;
+          gap: 14px;
+          width: max-content;
+          white-space: nowrap;
+        }
+
+        .calendarClassTopRow strong,
+        .calendarClassTopRow > span {
+          display: inline-block;
+          flex: 0 0 auto;
+          width: auto;
+          margin: 0;
+          white-space: nowrap;
+        }
+
+        .calendarClassBottomRow {
+          display: flex;
+          align-items: center;
+          flex-wrap: nowrap;
+          gap: 10px;
+          width: max-content;
+          margin-top: 8px;
+          white-space: nowrap;
+        }
+
+        .calendarClassBottomRow .calendarCourse {
+          display: inline-block;
+          flex: 0 0 auto;
+          width: auto;
+          max-width: none;
+          margin: 0;
+          white-space: nowrap;
+          overflow: visible;
+          text-overflow: clip;
+        }
+
+        .calendarClassBottomRow .calendarActions {
+          display: inline-flex;
+          flex: 0 0 auto;
+          width: auto;
+          margin: 0;
+          flex-wrap: nowrap;
+          gap: 6px;
+        }
+
         .calendarClassScheduled {
           background: #d9f0ff;
           border-color: #75bce8;
@@ -2092,6 +2174,227 @@ return (
 
           .calendarActions button {
             width: 100%;
+          }
+        }
+
+
+        /* Admin monthly calendar - teacher layout with inline actions */
+        .monthlyCalendar {
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          overflow-x: auto;
+          overflow-y: hidden;
+          box-sizing: border-box;
+          border: 1px solid #e5edf2;
+          border-radius: 12px;
+          background: #fff;
+        }
+
+        .calendarWeekdays,
+        .calendarGrid {
+          width: 1960px;
+          min-width: 1960px;
+          box-sizing: border-box;
+          grid-template-columns: repeat(7, minmax(280px, 1fr));
+        }
+
+        .calendarWeekdays {
+          display: grid;
+          background: #f8fbfd;
+          border-bottom: 1px solid #e3ebf0;
+        }
+
+        .calendarWeekday {
+          padding: 11px 8px;
+          text-align: center;
+          color: #607d8d;
+          font-size: 11px;
+          font-weight: 800;
+          white-space: nowrap;
+        }
+
+        .calendarGrid {
+          display: grid;
+        }
+
+        .calendarCell {
+          min-width: 280px;
+          min-height: 170px;
+          padding: 9px;
+          box-sizing: border-box;
+          background: #fff;
+          border-right: 1px solid #e8eef2;
+          border-bottom: 1px solid #e8eef2;
+        }
+
+        .calendarCell:nth-child(7n) {
+          border-right: none;
+        }
+
+        .calendarEmpty {
+          background: #fbfdfe;
+        }
+
+        .calendarDate {
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 8px;
+          border-radius: 50%;
+          background: #f1f7fa;
+          color: #123b5d;
+          font-size: 11px;
+          font-weight: 800;
+        }
+
+        .calendarClasses {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          width: 100%;
+          min-width: 0;
+        }
+
+        .calendarClass {
+          display: block;
+          direction: ltr;
+          width: 100%;
+          min-width: 0;
+          padding: 9px 10px;
+          box-sizing: border-box;
+          border: 1px solid #dce8ee;
+          border-left: 5px solid #347fae;
+          border-radius: 8px;
+          overflow: visible;
+          color: inherit;
+          white-space: nowrap;
+          min-width: max-content;
+        }
+
+        .calendarClass strong {
+          display: inline-block;
+          width: auto;
+          margin: 0 14px 8px 0;
+          color: inherit;
+          font-size: 12px;
+          font-weight: 800;
+          line-height: 1.4;
+          white-space: nowrap;
+          vertical-align: middle;
+        }
+
+        .calendarClass > span {
+          display: inline-block;
+          width: auto;
+          min-width: 0;
+          margin: 0 16px 8px 0;
+          color: inherit;
+          font-size: 12px;
+          font-weight: 800;
+          line-height: 1.4;
+          vertical-align: middle;
+          white-space: nowrap;
+          overflow: visible;
+          text-overflow: clip;
+          box-sizing: border-box;
+        }
+
+        .calendarClass > span:nth-of-type(3) {
+          display: inline-block;
+          width: auto;
+          max-width: calc(100% - 175px);
+          margin: 0;
+          font-size: 12px;
+          font-weight: 700;
+          line-height: 1.4;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          vertical-align: middle;
+        }
+
+        .calendarActions {
+          display: inline-flex;
+          width: 165px;
+          margin: 0 0 0 8px;
+          vertical-align: middle;
+          flex-direction: row;
+          justify-content: flex-start;
+          flex-wrap: nowrap;
+          gap: 6px;
+          box-sizing: border-box;
+        }
+
+        .calendarActions button {
+          width: auto;
+          padding: 5px 8px;
+          font-size: 11px;
+          white-space: nowrap;
+          border-radius: 6px;
+        }
+
+        .calendarClassScheduled {
+          background: #c7e7ff !important;
+          border-color: #4fa8dc !important;
+          border-left: 5px solid #0878b5 !important;
+          color: #064b70 !important;
+        }
+
+        .calendarClassCompleted {
+          background: #d2d6da !important;
+          border-color: #8a949e !important;
+          border-left: 5px solid #4b5560 !important;
+          color: #28323a !important;
+        }
+
+        .calendarClassAttended {
+          background: #c8f2d8 !important;
+          border-color: #55c77d !important;
+          border-left: 5px solid #168a45 !important;
+          color: #075b2d !important;
+        }
+
+        .calendarClassAbsent {
+          background: #ffd0d0 !important;
+          border-color: #e66a6a !important;
+          border-left: 5px solid #c21f1f !important;
+          color: #8f1111 !important;
+        }
+
+        .calendarClassLate {
+          background: #ffe3a8 !important;
+          border-color: #e4a52b !important;
+          border-left: 5px solid #c87500 !important;
+          color: #744500 !important;
+        }
+
+        .calendarClassExcused {
+          background: #dfc9ff !important;
+          border-color: #a77ad9 !important;
+          border-left: 5px solid #7438b5 !important;
+          color: #4d237d !important;
+        }
+
+        .calendarClassCancelled {
+          background: #ffc4d2 !important;
+          border-color: #d65b79 !important;
+          border-left: 5px solid #9b1d42 !important;
+          color: #70152f !important;
+        }
+
+        @media (max-width: 600px) {
+          .calendarWeekdays,
+          .calendarGrid {
+            width: 1960px;
+            min-width: 1960px;
+          }
+
+          .calendarCell {
+            min-width: 280px;
+            min-height: 150px;
           }
         }
 
