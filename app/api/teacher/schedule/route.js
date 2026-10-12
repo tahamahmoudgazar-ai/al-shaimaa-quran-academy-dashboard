@@ -2,6 +2,77 @@ import { NextResponse } from "next/server";
 import { requireTeacher } from "../../../../lib/auth";
 import { createClient } from "@supabase/supabase-js";
 
+const TIME_ZONE = "Africa/Cairo";
+
+function cairoLocalToUtc(dateString, timeString) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  const [hour, minute, second = 0] = timeString
+    .split(":")
+    .map(Number);
+
+  const target = Date.UTC(
+    year, month - 1, day, hour, minute, second
+  );
+
+  let guess = target;
+
+  for (let i = 0; i < 5; i++) {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: TIME_ZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(new Date(guess));
+
+    const values = Object.fromEntries(
+      parts.map((part) => [part.type, part.value])
+    );
+
+    const represented = Date.UTC(
+      Number(values.year),
+      Number(values.month) - 1,
+      Number(values.day),
+      Number(values.hour),
+      Number(values.minute),
+      Number(values.second)
+    );
+
+    const difference = target - represented;
+    guess += difference;
+
+    if (difference === 0) break;
+  }
+
+  return new Date(guess);
+}
+
+function isZoomJoinWindowOpen(schedule) {
+  const status = String(schedule.status || "").toLowerCase();
+
+  if (["cancelled", "canceled", "completed"].includes(status)) {
+    return false;
+  }
+
+  const start = cairoLocalToUtc(
+    schedule.schedule_date,
+    schedule.start_time
+  ).getTime();
+
+  const end = cairoLocalToUtc(
+    schedule.schedule_date,
+    schedule.end_time
+  ).getTime();
+
+  const now = Date.now();
+
+  return now >= start - 5 * 60 * 1000 && now < end;
+}
+
+
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -202,11 +273,14 @@ export async function GET(request) {
       zoom_meeting_id:
         schedule.zoom_meeting_id || null,
 
-      zoom_join_url:
-        schedule.zoom_join_url || null,
 
-      zoom_start_url:
-        schedule.zoom_start_url || null,
+      zoom_join_url: null,
+
+      zoom_start_url: isZoomJoinWindowOpen(schedule)
+        ? schedule.zoom_start_url || null
+        : null,
+
+
 
       student_id:
         enrollment?.student_id || null,

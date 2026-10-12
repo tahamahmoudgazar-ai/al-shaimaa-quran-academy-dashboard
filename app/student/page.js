@@ -33,9 +33,13 @@ export default function StudentDashboard() {
       }
     }
 
-    loadDashboard();
-  }, []);
 
+    loadDashboard();
+
+    const intervalId = setInterval(loadDashboard, 15000);
+
+    return () => clearInterval(intervalId);
+  }, []);
   async function handleLogout() {
     const { createBrowserClient } = await import("@supabase/ssr");
 

@@ -1,6 +1,9 @@
 
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { createClient } from "@supabase/supabase-js";
+
+export const runtime = "nodejs";
 
 export async function POST(request) {
   try {
@@ -8,7 +11,6 @@ export async function POST(request) {
 
     if (!secretToken) {
       console.error("Zoom webhook secret token is not configured.");
-
       return NextResponse.json(
         { error: "Webhook is not configured" },
         { status: 500 }
@@ -28,7 +30,7 @@ export async function POST(request) {
       );
     }
 
-    // Zoom URL validation challenge
+    // Zoom endpoint URL validation
     if (event.event === "endpoint.url_validation") {
       const plainToken = event.payload?.plainToken;
 
@@ -50,7 +52,7 @@ export async function POST(request) {
       });
     }
 
-    // Verify the authenticity of Zoom webhook notifications
+    // Verify Zoom webhook signature and timestamp
     const timestamp = request.headers.get("x-zm-request-timestamp");
     const signature = request.headers.get("x-zm-signature");
 
@@ -95,9 +97,71 @@ export async function POST(request) {
       );
     }
 
-    // Acknowledge verified events.
-    // Event processing and attendance updates will be added next.
-    console.log("Verified Zoom event:", event.event);
+    // Configure Supabase only after verifying the request
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error("Supabase server configuration is incomplete.");
+      return NextResponse.json(
+        { error: "Database is not configured" },
+        { status: 500 }
+      );
+    }
+
+    if (typeof event.event !== "string" || !event.event) {
+      return NextResponse.json(
+        { error: "Missing event type" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+
+    // Prefer Zoom's event ID; otherwise use a deterministic body hash.
+    const eventId =
+      typeof event.event_id === "string" && event.event_id
+        ? event.event_id
+        : crypto.createHash("sha256").update(body).digest("hex");
+
+    const meetingId = event.payload?.object?.id;
+
+    const { error: insertError } = await supabase
+      .from("zoom_webhook_events")
+      .upsert(
+        {
+          event_id: eventId,
+          event_type: event.event,
+          zoom_meeting_id:
+            meetingId !== undefined && meetingId !== null
+              ? String(meetingId)
+              : null,
+          payload: event,
+          processing_status: "pending",
+        },
+        {
+          onConflict: "event_id",
+          ignoreDuplicates: true,
+        }
+      );
+
+    if (insertError) {
+      console.error(
+        "Failed to store verified Zoom event:",
+        insertError.message
+      );
+
+      // A non-2xx response allows Zoom to retry delivery.
+      return NextResponse.json(
+        { error: "Failed to store event" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ received: true });
   } catch (error) {

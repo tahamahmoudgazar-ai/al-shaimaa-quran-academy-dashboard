@@ -1468,3 +1468,19 @@
   border-left-color: #9b1d42 !important;
   color: #70152f !important;
 }
+
+.joinButton {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 7px 12px;
+  background: #166534;
+  color: #ffffff;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.joinButton:hover {
+  background: #14532d;
+}

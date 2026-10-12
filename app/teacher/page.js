@@ -84,7 +84,12 @@ if (!profileResponse.ok) {
     }
 
     loadDashboard();
+
+    const intervalId = setInterval(loadDashboard, 15000);
+
+    return () => clearInterval(intervalId);
   }, []);
+
 
   const handleProgressChange = (event) => {
     const { name, value } = event.target;
@@ -612,6 +617,19 @@ const getScheduleStatus = (schedule) => {
                             <div className={styles.teacherCalendarCourse}>
                               {schedule.course_name || "Unknown Course"}
                             </div>
+
+{schedule.zoom_start_url && (
+  <a
+    href={schedule.zoom_start_url}
+    target="_blank"
+    rel="noopener noreferrer"
+    className={styles.joinButton}
+    onClick={(event) => event.stopPropagation()}
+  >
+    Start Zoom Class
+  </a>
+)}
+
 
                           </div>
                         </div>
