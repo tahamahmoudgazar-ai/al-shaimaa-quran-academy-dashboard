@@ -69,7 +69,7 @@ function isZoomJoinWindowOpen(schedule) {
 
   const now = Date.now();
 
-  return now >= start - 5 * 60 * 1000 && now < end;
+  return now >= start - 15 * 60 * 1000 && now < end;
 }
 
 

@@ -12,6 +12,7 @@ export default function TeacherDashboard() {
   const [progressLoading, setProgressLoading] = useState(false);
   const [progressMessage, setProgressMessage] = useState("");
   const [error, setError] = useState("");
+const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 const [currentMonth, setCurrentMonth] = useState(
   new Date().getMonth()
 );
@@ -329,7 +330,29 @@ const getScheduleStatus = (schedule) => {
 
   return (
     <main className={styles.dashboard}>
-      <aside className={styles.sidebar}>
+      {mobileMenuOpen && (
+        <button
+          type="button"
+          className={styles.sidebarOverlay}
+          aria-label="Close menu"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      <button
+        type="button"
+        className={styles.mobileMenuButton}
+        aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+        aria-expanded={mobileMenuOpen}
+        onClick={() => setMobileMenuOpen((open) => !open)}
+      >
+        {mobileMenuOpen ? "✕" : "☰"}
+      </button>
+      <aside
+        className={`${styles.sidebar} ${
+          mobileMenuOpen ? styles.sidebarOpen : ""
+        }`}
+      >
         <div className={styles.logoArea}>
           <div className={styles.logo}>AQ</div>
 
@@ -348,27 +371,27 @@ const getScheduleStatus = (schedule) => {
           <a
             href="/teacher"
             className={`${styles.navItem} ${styles.activeNav}`}
-          >
+           onClick={() => setMobileMenuOpen(false)}>
             <span>⌂</span>
             Dashboard
           </a>
 
-          <a href="#students" className={styles.navItem}>
+          <a href="#students" className={styles.navItem} onClick={() => setMobileMenuOpen(false)}>
             <span>👨‍🎓</span>
             My Students
           </a>
 
-          <a href="#schedule" className={styles.navItem}>
+          <a href="#schedule" className={styles.navItem} onClick={() => setMobileMenuOpen(false)}>
             <span>📅</span>
             My Schedule
           </a>
 
-          <a href="#progress" className={styles.navItem}>
+          <a href="#progress" className={styles.navItem} onClick={() => setMobileMenuOpen(false)}>
             <span>📈</span>
             Student Progress
           </a>
 
-          <a href="#earnings" className={styles.navItem}>
+          <a href="#earnings" className={styles.navItem} onClick={() => setMobileMenuOpen(false)}>
             <span>💰</span>
             My Earnings
           </a>
@@ -477,6 +500,74 @@ const getScheduleStatus = (schedule) => {
             <div className={styles.statValue}>
               {progress.length}
             </div>
+          </div>
+        </section>
+<section
+          id="zoom"
+          className={`${styles.panel} ${styles.sectionPanel}`}
+        >
+          <div className={styles.panelHeader}>
+            <div>
+              <h2>Online Classes</h2>
+              <p>Access your scheduled Zoom classes.</p>
+            </div>
+          </div>
+
+          <div className={styles.empty}>
+            {(() => {
+              const upcomingClasses = schedules.filter((schedule) => {
+                const classEnd = new Date(
+                  `${schedule.schedule_date}T${schedule.end_time}`
+                );
+
+                return (
+                  !["cancelled", "canceled", "completed"].includes(
+                    String(schedule.status || "").toLowerCase()
+                  ) &&
+                  classEnd > new Date()
+                );
+              });
+
+              if (upcomingClasses.length === 0) {
+                return "No upcoming online classes.";
+              }
+
+return upcomingClasses.slice(0, 1).map((schedule) => (
+                <div
+                  key={schedule.id}
+                  style={{
+                    padding: "14px",
+                    marginBottom: "12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "10px",
+                  }}
+                >
+                  <strong>
+                    {schedule.student_name || "Student"}
+                  </strong>
+
+                  <p>{schedule.course_name || "Online Class"}</p>
+
+                  <p>
+                    {schedule.schedule_date} ·{" "}
+                    {schedule.start_time?.slice(0, 5)}–{schedule.end_time?.slice(0, 5)}
+                  </p>
+
+                  {schedule.zoom_start_url ? (
+                    <a
+                      href={schedule.zoom_start_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.joinButton}
+                    >
+                      Start Zoom Class
+                    </a>
+                  ) : (
+                    <p>Zoom link will appear 15 minutes before class.</p>
+                  )}
+                </div>
+              ));
+            })()}
           </div>
         </section>
 
@@ -934,25 +1025,7 @@ const getScheduleStatus = (schedule) => {
           </div>
         </section>
 
-        <section
-          id="zoom"
-          className={`${styles.panel} ${styles.sectionPanel}`}
-        >
-          <div className={styles.panelHeader}>
-            <div>
-              <h2>Online Classes</h2>
 
-              <p>
-                Zoom classroom integration.
-              </p>
-            </div>
-          </div>
-
-          <div className={styles.empty}>
-            Zoom integration will be connected after the
-            teacher system is complete.
-          </div>
-        </section>
       </section>
     </main>
   );

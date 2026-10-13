@@ -1,3 +1,4 @@
+
 .page {
   min-height: 100vh;
   background: #eef7fb;
@@ -311,6 +312,9 @@
     display: none;
   }
 }
+
+/* Teacher Dashboard Sidebar */
+
 .dashboard {
   min-height: 100vh;
   display: flex;
@@ -320,13 +324,21 @@
 .sidebar {
   width: 245px;
   flex-shrink: 0;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background: #123b5d;
   color: #fff;
   padding: 20px 14px;
   box-sizing: border-box;
+
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  z-index: 20;
 }
 
 .logoArea {
@@ -448,37 +460,66 @@
 .main {
   flex: 1;
   min-width: 0;
+  min-height: 100vh;
+  margin-left: 245px;
   padding: 30px;
   box-sizing: border-box;
 }
 
 @media (max-width: 800px) {
-  .dashboard {
-    display: block;
-  }
+  .dashboard { display: block; }
 
   .sidebar {
-    width: 100%;
-    min-height: auto;
-    padding: 14px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 270px;
+    max-width: 85vw;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    box-sizing: border-box;
+    padding: 20px 14px;
+    z-index: 101;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
   }
 
-  .logoArea {
-    padding-bottom: 14px;
+  .sidebar.sidebarOpen {
+    transform: translateX(0);
   }
+
+  .logoArea { padding-bottom: 14px; }
 
   .nav {
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: none;
+    align-items: stretch;
+    width: 100%;
+    gap: 8px;
     margin-top: 14px;
+  }
+
+  .navItem {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .sidebarBottom {
-    margin-top: 14px;
+    margin-top: 20px;
     padding-top: 14px;
   }
 
   .main {
-    padding: 18px;
+    width: 100%;
+    margin-left: 0;
+    padding: 76px 18px 18px;
+    box-sizing: border-box;
   }
 }
 
@@ -487,6 +528,7 @@
     grid-template-columns: 1fr;
   }
 }
+
 /* ===== Teacher Dashboard - Students & Progress ===== */
 
 .loading {
@@ -803,6 +845,7 @@
     grid-column: auto;
   }
 }
+
 /* ===== Monthly Schedule ===== */
 
 .monthControls {
@@ -1289,7 +1332,6 @@
   }
 }
 
-
 /* Final fix: keep all class information inside the same card */
 
 .teacherCalendarClass {
@@ -1344,7 +1386,6 @@
     font-size: 8px !important;
   }
 }
-
 
 /* Final width fix for full one-line class cards */
 
@@ -1417,7 +1458,6 @@
   }
 }
 
-
 /* Stronger Teacher Calendar Status Contrast */
 
 .teacherCalendarClass.statusScheduled {
@@ -1483,4 +1523,71 @@
 
 .joinButton:hover {
   background: #14532d;
+}
+
+.mobileMenuButton {
+  display: none;
+}
+
+.sidebarOverlay {
+  display: none;
+}
+
+@media (max-width: 800px) {
+  .mobileMenuButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 10px;
+    background: #123b5d;
+    color: #fff;
+    font-size: 25px;
+    cursor: pointer;
+    z-index: 102;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 270px;
+    max-width: 85vw;
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 101;
+    box-shadow: none;
+  }
+
+  .sidebar.sidebarOpen {
+    transform: translateX(0);
+    box-shadow: 4px 0 18px rgba(0, 0, 0, 0.2);
+  }
+
+  .sidebarOverlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: none;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 100;
+    cursor: pointer;
+  }
+
+  .main {
+    margin-left: 0;
+    padding-top: 76px;
+  }
 }

@@ -73,6 +73,49 @@ export default function TeachersPage() {
     }
   }
 
+  async function setTeacherPassword(teacher) {
+    const name = teacher.full_name || "this teacher";
+    const password = window.prompt(
+      `Enter a new password for ${name} (at least 8 characters):`
+    );
+
+    if (password === null) return;
+
+    if (password.length < 8 || password.length > 72) {
+      window.alert("Password must be between 8 and 72 characters.");
+      return;
+    }
+
+    const confirmation = window.prompt(
+      "Re-enter the new password to confirm:"
+    );
+
+    if (confirmation === null) return;
+
+    if (password !== confirmation) {
+      window.alert("Passwords do not match.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/teachers/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teacherId: teacher.id, password })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to update password.");
+      }
+
+      window.alert(`Password updated successfully for ${name}.`);
+    } catch (error) {
+      window.alert(error.message || "Failed to update password.");
+    }
+  }
+
   const filteredTeachers = teachers.filter((teacher) => {
     const searchText = search.toLowerCase().trim();
 
@@ -360,6 +403,13 @@ export default function TeachersPage() {
 </button>
                   <button
                     type="button"
+                    onClick={() => setTeacherPassword(teacher)}
+                    style={passwordButton}
+                  >
+                    Set Password
+                  </button>
+                  <button
+                    type="button"
                     onClick={() =>
                       deleteTeacher(teacher)
                     }
@@ -469,6 +519,17 @@ const deleteButton = {
   border: "1px solid #e53e3e",
   background: "#e53e3e",
   color: "#fff",
+  borderRadius: 8,
+  cursor: "pointer",
+  fontWeight: 600
+};
+
+
+const passwordButton = {
+  padding: "9px 18px",
+  border: "1px solid #805ad5",
+  background: "#fff",
+  color: "#6b46c1",
   borderRadius: 8,
   cursor: "pointer",
   fontWeight: 600

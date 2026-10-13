@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,6 +8,7 @@ export default function StudentDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [currentMonth, setCurrentMonth] = useState(
     new Date().getMonth()
@@ -14,6 +16,7 @@ export default function StudentDashboard() {
   const [currentYear, setCurrentYear] = useState(
     new Date().getFullYear()
   );
+
   useEffect(() => {
     async function loadDashboard() {
       try {
@@ -21,10 +24,13 @@ export default function StudentDashboard() {
         const result = await response.json();
 
         if (!response.ok) {
-          throw new Error(result.error || "Failed to load dashboard.");
+          throw new Error(
+            result.error || "Failed to load dashboard."
+          );
         }
 
         setData(result);
+        setError("");
       } catch (err) {
         console.error("Student dashboard error:", err);
         setError(err.message || "Failed to load dashboard.");
@@ -33,13 +39,13 @@ export default function StudentDashboard() {
       }
     }
 
-
     loadDashboard();
 
     const intervalId = setInterval(loadDashboard, 15000);
 
     return () => clearInterval(intervalId);
   }, []);
+
   async function handleLogout() {
     const { createBrowserClient } = await import("@supabase/ssr");
 
@@ -53,7 +59,11 @@ export default function StudentDashboard() {
   }
 
   if (loading) {
-    return <div className={styles.loading}>Loading student dashboard...</div>;
+    return (
+      <div className={styles.loading}>
+        Loading student dashboard...
+      </div>
+    );
   }
 
   if (error) {
@@ -72,6 +82,42 @@ export default function StudentDashboard() {
   const schedules = data?.schedules || [];
   const progress = data?.progress || [];
   const attendance = data?.attendance || [];
+
+  const nextUpcomingClass =
+    schedules
+      .filter((item) => {
+        if (
+          !item.schedule_date ||
+          !item.start_time ||
+          !item.end_time
+        ) {
+          return false;
+        }
+
+        const status = String(item.status || "").toLowerCase();
+
+        if (
+          ["cancelled", "canceled", "completed"].includes(status)
+        ) {
+          return false;
+        }
+
+        const classEnd = new Date(
+          `${item.schedule_date}T${item.end_time}`
+        );
+
+        return classEnd > new Date();
+      })
+      .sort((a, b) => {
+        const dateA = new Date(
+          `${a.schedule_date}T${a.start_time}`
+        );
+        const dateB = new Date(
+          `${b.schedule_date}T${b.start_time}`
+        );
+
+        return dateA - dateB;
+      })[0] || null;
 
   const monthlySchedules = schedules.filter((item) => {
     if (!item.schedule_date) return false;
@@ -112,16 +158,10 @@ export default function StudentDashboard() {
 
   const studentCalendarCells = Array.from(
     {
-      length:
-        studentFirstDayOfMonth +
-        studentDaysInMonth,
+      length: studentFirstDayOfMonth + studentDaysInMonth,
     },
     (_, index) => {
-      const day =
-        index -
-        studentFirstDayOfMonth +
-        1;
-
+      const day = index - studentFirstDayOfMonth + 1;
       return day > 0 ? day : null;
     }
   );
@@ -146,57 +186,12 @@ export default function StudentDashboard() {
     year: "numeric",
   });
 
-  const getScheduleStatus = (item) => {
-    if (item.status === "cancelled") {
-      return {
-        label: "Cancelled",
-        className: styles.statusCancelled,
-      };
-    }
-
-    if (item.attendance_status === "absent") {
-      return {
-        label: "Absent",
-        className: styles.statusAbsent,
-      };
-    }
-
-    if (item.attendance_status === "late") {
-      return {
-        label: "Late",
-        className: styles.statusLate,
-      };
-    }
-
-    if (
-      item.attendance_status === "present" ||
-      item.attendance_status === "attended"
-    ) {
-      return {
-        label: "Attended",
-        className: styles.statusAttended,
-      };
-    }
-
-    const classEnd = new Date(
-      `${item.schedule_date}T${item.end_time || "00:00:00"}`
-    );
-
-    if (classEnd < new Date()) {
-      return {
-        label: "Completed",
-        className: styles.statusCompleted,
-      };
-    }
-
-    return {
-      label: "Scheduled",
-      className: styles.statusScheduled,
-    };
-  };
-
   const getStudentCalendarStatusClass = (item) => {
-    if (item.status === "cancelled") {
+    if (
+      ["cancelled", "canceled"].includes(
+        String(item.status || "").toLowerCase()
+      )
+    ) {
       return styles.studentCalendarCancelled;
     }
 
@@ -230,6 +225,34 @@ export default function StudentDashboard() {
     return styles.studentCalendarScheduled;
   };
 
+  // Zoom becomes available 15 minutes before class starts
+  // and remains available until the scheduled class ends.
+  const canJoinZoom = (item) => {
+    if (
+      !item?.zoom_join_url ||
+      !item?.schedule_date ||
+      !item?.start_time
+    ) {
+      return false;
+    }
+
+    const classStart = new Date(
+      `${item.schedule_date}T${item.start_time}`
+    );
+
+    const availableFrom = new Date(
+      classStart.getTime() - 15 * 60 * 1000
+    );
+
+    const classEnd = item.end_time
+      ? new Date(`${item.schedule_date}T${item.end_time}`)
+      : new Date(classStart.getTime() + 60 * 60 * 1000);
+
+    const now = new Date();
+
+    return now >= availableFrom && now <= classEnd;
+  };
+
   const attendanceSummary = {
     present: attendance.filter(
       (item) => item.status === "present"
@@ -258,12 +281,16 @@ export default function StudentDashboard() {
     .join("")
     .toUpperCase();
 
+  const closeMobileMenu = () => setSidebarOpen(false);
+
   return (
     <div className={styles.dashboard}>
-
       {/* Sidebar */}
-      <aside className={styles.sidebar}>
-
+      <aside
+        className={`${styles.sidebar} ${
+          sidebarOpen ? styles.sidebarOpen : ""
+        }`}
+      >
         <div className={styles.logoArea}>
           <div className={styles.logo}>AQ</div>
 
@@ -276,39 +303,53 @@ export default function StudentDashboard() {
         </div>
 
         <nav className={styles.nav}>
-
           <a
             href="#dashboard"
             className={`${styles.navItem} ${styles.activeNav}`}
+            onClick={closeMobileMenu}
           >
             <span>⌂</span>
             Dashboard
           </a>
 
-          <a href="#courses" className={styles.navItem}>
+          <a
+            href="#courses"
+            className={styles.navItem}
+            onClick={closeMobileMenu}
+          >
             <span>📚</span>
             My Courses
           </a>
 
-          <a href="#schedule" className={styles.navItem}>
+          <a
+            href="#schedule"
+            className={styles.navItem}
+            onClick={closeMobileMenu}
+          >
             <span>📅</span>
             My Schedule
           </a>
 
-          <a href="#progress" className={styles.navItem}>
+          <a
+            href="#progress"
+            className={styles.navItem}
+            onClick={closeMobileMenu}
+          >
             <span>📈</span>
             My Progress
           </a>
 
-          <a href="#profile" className={styles.navItem}>
+          <a
+            href="#profile"
+            className={styles.navItem}
+            onClick={closeMobileMenu}
+          >
             <span>👤</span>
             My Profile
           </a>
-
         </nav>
 
         <div className={styles.sidebarBottom}>
-
           <div className={styles.studentMini}>
             <div className={styles.avatar}>
               {initials || "ST"}
@@ -319,9 +360,7 @@ export default function StudentDashboard() {
                 {studentName}
               </div>
 
-              <div className={styles.miniRole}>
-                Student
-              </div>
+              <div className={styles.miniRole}>Student</div>
             </div>
           </div>
 
@@ -333,25 +372,40 @@ export default function StudentDashboard() {
             <span>↪</span>
             Logout
           </button>
-
         </div>
       </aside>
 
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <button
+          type="button"
+          className={styles.sidebarOverlay}
+          aria-label="Close menu"
+          onClick={closeMobileMenu}
+        />
+      )}
+
       {/* Main */}
       <main className={styles.main} id="dashboard">
+        <button
+          type="button"
+          className={styles.mobileMenuButton}
+          aria-label={sidebarOpen ? "Close menu" : "Open menu"}
+          aria-expanded={sidebarOpen}
+          onClick={() => setSidebarOpen((open) => !open)}
+        >
+          {sidebarOpen ? "✕" : "☰"}
+        </button>
 
         <header className={styles.header}>
-
           <div>
             <h1>Student Dashboard</h1>
-
             <p>
               Manage your courses, schedule, and learning progress.
             </p>
           </div>
 
           <div className={styles.profile}>
-
             <div className={styles.profileAvatar}>
               {initials || "ST"}
             </div>
@@ -361,13 +415,9 @@ export default function StudentDashboard() {
                 {studentName}
               </div>
 
-              <div className={styles.profileRole}>
-                Student
-              </div>
+              <div className={styles.profileRole}>Student</div>
             </div>
-
           </div>
-
         </header>
 
         {/* Courses */}
@@ -375,7 +425,6 @@ export default function StudentDashboard() {
           className={styles.sectionPanel}
           id="courses"
         >
-
           <div className={styles.panelHeader}>
             <div>
               <h2>📚 My Courses</h2>
@@ -399,9 +448,7 @@ export default function StudentDashboard() {
                   className={styles.courseCard}
                   key={course.id}
                 >
-                  <div className={styles.courseIcon}>
-                    📚
-                  </div>
+                  <div className={styles.courseIcon}>📚</div>
 
                   <div className={styles.courseInfo}>
                     <div className={styles.courseTitle}>
@@ -442,7 +489,61 @@ export default function StudentDashboard() {
               ))}
             </div>
           )}
+        </section>
 
+        {/* Next Upcoming Class */}
+        <section
+          className={styles.sectionPanel}
+          id="next-class"
+        >
+          <div className={styles.panelHeader}>
+            <div>
+              <h2>🎯 Next Upcoming Class</h2>
+              <p>Your next scheduled lesson.</p>
+            </div>
+          </div>
+
+          {!nextUpcomingClass ? (
+            <div className={styles.empty}>
+              No upcoming classes scheduled.
+            </div>
+          ) : (
+            <div className={styles.empty}>
+              <h3>
+                {nextUpcomingClass.course_name || "Quran Class"}
+              </h3>
+
+              <p>
+                Date: {nextUpcomingClass.schedule_date}
+              </p>
+
+              <p>
+                Time: {nextUpcomingClass.start_time} –{" "}
+                {nextUpcomingClass.end_time}
+              </p>
+
+              {nextUpcomingClass.teacher_name && (
+                <p>
+                  Teacher: {nextUpcomingClass.teacher_name}
+                </p>
+              )}
+
+              {canJoinZoom(nextUpcomingClass) ? (
+                <a
+                  className={styles.joinButton}
+                  href={nextUpcomingClass.zoom_join_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Join Zoom Class
+                </a>
+              ) : (
+                <p>
+                  Zoom link will appear 15 minutes before class.
+                </p>
+              )}
+            </div>
+          )}
         </section>
 
         {/* Monthly Schedule */}
@@ -519,9 +620,7 @@ export default function StudentDashboard() {
                     <div
                       key={index}
                       className={`${styles.studentCalendarCell} ${
-                        day
-                          ? ""
-                          : styles.studentCalendarEmpty
+                        day ? "" : styles.studentCalendarEmpty
                       }`}
                     >
                       {day && (
@@ -530,57 +629,33 @@ export default function StudentDashboard() {
                             {day}
                           </div>
 
-                          <div className={styles.studentCalendarClasses}>
-                            {dayClasses.map((item) => {
-                              const status =
-                                getScheduleStatus(item);
+                          <div
+                            className={styles.studentCalendarClasses}
+                          >
+                            {dayClasses.map((item) => (
+                              <div
+                                key={item.id}
+                                className={`${styles.studentCalendarClass} ${getStudentCalendarStatusClass(item)}`}
+                              >
+                                <strong>
+                                  {item.start_time
+                                    ? item.start_time.slice(0, 5)
+                                    : "—"}{" "}
+                                  –{" "}
+                                  {item.end_time
+                                    ? item.end_time.slice(0, 5)
+                                    : "—"}
+                                </strong>
 
-                              return (
-                                <div
-                                  key={item.id}
-                                  className={`${styles.studentCalendarClass} ${getStudentCalendarStatusClass(item)}`}
-                                >
-                                  <strong>
-                                    {item.start_time
-                                      ? item.start_time.slice(0, 5)
-                                      : "—"}{" "}
-                                    –{" "}
-                                    {item.end_time
-                                      ? item.end_time.slice(0, 5)
-                                      : "—"}
-                                  </strong>
+                                <span>
+                                  {item.course_name}
+                                </span>
 
-                                  <span>
-                                    {item.course_name}
-                                  </span>
-
-                                  <span>
-                                    {item.teacher_name}
-                                  </span>
-
-                                  <span
-                                    className={`${styles.scheduleStatus} ${status.className}`}
-                                  >
-                                    {status.label}
-                                  </span>
-
-                                  {item.zoom_join_url ? (
-                                    <a
-                                      href={item.zoom_join_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className={styles.joinButton}
-                                    >
-                                      Join Zoom
-                                    </a>
-                                  ) : (
-                                    <span className={styles.noZoom}>
-                                      No link
-                                    </span>
-                                  )}
-                                </div>
-                              );
-                            })}
+                                <span>
+                                  {item.teacher_name}
+                                </span>
+                              </div>
+                            ))}
                           </div>
                         </>
                       )}
@@ -590,7 +665,6 @@ export default function StudentDashboard() {
               </div>
             </div>
           )}
-
         </section>
 
         {/* Attendance */}
@@ -660,10 +734,7 @@ export default function StudentDashboard() {
                     key={item.id}
                   >
                     <div className={styles.attendanceCourse}>
-                      <strong>
-                        {item.course_name}
-                      </strong>
-
+                      <strong>{item.course_name}</strong>
                       <span>
                         Teacher: {item.teacher_name}
                       </span>
@@ -671,14 +742,11 @@ export default function StudentDashboard() {
 
                     <div className={styles.attendanceTime}>
                       {date
-                        ? date.toLocaleDateString(
-                            "en-US",
-                            {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            }
-                          )
+                        ? date.toLocaleDateString("en-US", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })
                         : "—"}
 
                       <span>
@@ -710,7 +778,6 @@ export default function StudentDashboard() {
           className={styles.sectionPanel}
           id="progress"
         >
-
           <div className={styles.panelHeader}>
             <div>
               <h2>📈 My Progress</h2>
@@ -729,9 +796,7 @@ export default function StudentDashboard() {
             </div>
           ) : (
             <div className={styles.progressList}>
-
               {progress.map((item, index) => {
-
                 const progressValue =
                   item.progress_percent == null
                     ? null
@@ -748,9 +813,7 @@ export default function StudentDashboard() {
                     className={styles.progressItem}
                     key={`${item.recorded_at}-${index}`}
                   >
-
                     <div className={styles.progressMain}>
-
                       <div className={styles.progressTitle}>
                         Progress
                       </div>
@@ -769,7 +832,6 @@ export default function StudentDashboard() {
                           ? "—"
                           : `${progressValue}%`}
                       </div>
-
                     </div>
 
                     <div>
@@ -793,17 +855,13 @@ export default function StudentDashboard() {
                     </div>
 
                     <div className={styles.progressComment}>
-                      {item.comment ||
-                        "No teacher comment."}
+                      {item.comment || "No teacher comment."}
                     </div>
-
                   </div>
                 );
               })}
-
             </div>
           )}
-
         </section>
 
         {/* Profile */}
@@ -811,7 +869,6 @@ export default function StudentDashboard() {
           className={styles.sectionPanel}
           id="profile"
         >
-
           <div className={styles.panelHeader}>
             <div>
               <h2>👤 My Profile</h2>
@@ -820,13 +877,11 @@ export default function StudentDashboard() {
           </div>
 
           <div className={styles.profileCard}>
-
             <div className={styles.profileAvatarLarge}>
               {initials || "ST"}
             </div>
 
             <div className={styles.profileDetails}>
-
               <div>
                 <span>Name</span>
                 <strong>{student?.full_name || "—"}</strong>
@@ -846,13 +901,9 @@ export default function StudentDashboard() {
                 <span>Status</span>
                 <strong>{student?.status || "—"}</strong>
               </div>
-
             </div>
-
           </div>
-
         </section>
-
       </main>
     </div>
   );

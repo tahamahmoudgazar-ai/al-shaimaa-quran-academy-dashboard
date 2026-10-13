@@ -72,6 +72,53 @@ export default function StudentsList() {
     }
   }
 
+  async function setStudentPassword(student) {
+    const profile = Array.isArray(student.profiles)
+      ? student.profiles[0]
+      : student.profiles;
+
+    const name = profile?.full_name || "this student";
+    const password = window.prompt(
+      `Enter a new password for ${name} (at least 8 characters):`
+    );
+
+    if (password === null) return;
+
+    if (password.length < 8) {
+      window.alert("Password must be at least 8 characters.");
+      return;
+    }
+
+    const confirmation = window.prompt("Re-enter the new password to confirm:");
+    if (confirmation === null) return;
+
+    if (password !== confirmation) {
+      window.alert("Passwords do not match.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/students/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: student.id,
+          password,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to update password.");
+      }
+
+      window.alert(`Password updated successfully for ${name}.`);
+    } catch (error) {
+      window.alert(error.message || "Failed to update password.");
+    }
+  }
+
   const searchText = search.toLowerCase().trim();
 
   const filteredStudents = students.filter((student) => {
@@ -244,6 +291,14 @@ export default function StudentsList() {
                     style={editButton}
                   >
                     Edit
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStudentPassword(student)}
+                    style={passwordButton}
+                  >
+                    Set Password
                   </button>
 
                   <button
@@ -467,6 +522,18 @@ const deleteButton = {
   border: "1px solid #e53e3e",
   background: "#fff",
   color: "#e53e3e",
+  borderRadius: 8,
+  cursor: "pointer",
+  fontWeight: 600,
+  fontSize: 12,
+};
+
+const passwordButton = {
+  gridColumn: "1 / -1",
+  padding: "9px 8px",
+  border: "1px solid #805ad5",
+  background: "#fff",
+  color: "#6b46c1",
   borderRadius: 8,
   cursor: "pointer",
   fontWeight: 600,

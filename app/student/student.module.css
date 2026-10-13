@@ -1197,6 +1197,10 @@
 }
 
 .studentCalendarClass {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 10px;
   padding: 8px;
   border: 1px solid #dce8ee;
   border-left: 3px solid #347fae;
@@ -1206,30 +1210,30 @@
 
 .studentCalendarClass strong,
 .studentCalendarClass > span {
-  display: block;
+  display: inline-flex;
+  margin: 0;
+  line-height: 1.4;
 }
 
 .studentCalendarClass strong {
-  margin-bottom: 4px;
   color: #24506c;
   font-size: 10px;
   font-weight: 800;
 }
 
 .studentCalendarClass > span {
-  margin-top: 3px;
   color: #607785;
   font-size: 9px;
 }
 
 .studentCalendarClass .scheduleStatus {
   display: inline-flex;
-  margin-top: 6px;
+  margin-top: 0;
 }
 
 .studentCalendarClass .joinButton,
 .studentCalendarClass .noZoom {
-  margin-top: 6px;
+  margin-top: 0;
 }
 
 @media (max-width: 900px) {
@@ -1627,4 +1631,470 @@ min-width: 110px;
 .studentCalendarClass.studentCalendarCancelled > span {
   color: inherit;
 }
+/* Student Calendar Horizontal Scroll Fix */
 
+.studentCalendar {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.studentCalendarWeekdays,
+.studentCalendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(170px, 1fr));
+  min-width: 1190px;
+}
+
+.studentCalendarWeekdays {
+  background: #f8fbfd;
+  border-bottom: 1px solid #e3ebf0;
+}
+
+.studentCalendarGrid {
+  grid-auto-rows: minmax(145px, auto);
+}
+
+.studentCalendarCell {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.studentCalendarClass {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 5px 10px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.studentCalendarClass strong,
+.studentCalendarClass > span,
+.studentCalendarClass .joinButton,
+.studentCalendarClass .noZoom {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.studentCalendarClass .scheduleStatus {
+  width: auto;
+  min-width: max-content;
+  margin-top: 0;
+}
+/* Show teacher name in student calendar */
+
+.studentCalendarWeekdays,
+.studentCalendarGrid {
+  grid-template-columns: repeat(7, minmax(320px, 1fr));
+  min-width: 2240px;
+}
+
+.studentCalendarClass {
+  flex-wrap: wrap;
+  overflow: visible;
+  white-space: normal;
+}
+
+.studentCalendarClass strong,
+.studentCalendarClass > span {
+  flex-shrink: 1;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.studentCalendarClass .scheduleStatus,
+.studentCalendarClass .joinButton,
+.studentCalendarClass .noZoom {
+  flex-shrink: 0;
+}
+/* Improve student calendar readability */
+
+.studentCalendarWeekday {
+  font-size: 14px;
+  font-weight: 800;
+  padding: 12px 8px;
+}
+
+.studentCalendarDate {
+  width: 30px;
+  height: 30px;
+  font-size: 13px;
+}
+
+.studentCalendarClass {
+  gap: 8px 12px;
+  padding: 10px;
+}
+
+.studentCalendarClass strong {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.studentCalendarClass > span {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.studentCalendarClass .scheduleStatus {
+  font-size: 11px;
+  padding: 5px 9px;
+}
+
+.studentCalendarClass .joinButton,
+.studentCalendarClass .noZoom {
+  font-size: 11px;
+}
+/* Make student calendar text bold */
+
+.studentCalendarWeekday,
+.studentCalendarDate,
+.studentCalendarClass strong,
+.studentCalendarClass > span,
+.studentCalendarClass .scheduleStatus,
+.studentCalendarClass .joinButton,
+.studentCalendarClass .noZoom {
+  font-weight: 700;
+}
+/* Student Sidebar: Desktop and Mobile */
+
+@media (min-width: 801px) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
+    min-height: 100vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+
+  .sidebarBottom {
+    margin-top: auto;
+  }
+
+  .mobileMenuButton {
+    display: none;
+  }
+
+  .sidebarOverlay {
+    display: none;
+  }
+}
+
+.mobileMenuButton {
+  display: none;
+}
+
+@media (max-width: 800px) {
+  .dashboard {
+    display: block;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1001;
+    width: 280px;
+    max-width: 85vw;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow-y: auto;
+    box-sizing: border-box;
+    transform: translateX(-105%);
+    transition: transform 0.25s ease;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .sidebar.sidebarOpen {
+    transform: translateX(0);
+  }
+
+  .sidebarBottom {
+    margin-top: auto;
+  }
+
+  .mobileMenuButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    margin-bottom: 16px;
+    padding: 0 16px;
+    border: 1px solid #d7ebf3;
+    border-radius: 8px;
+    background: #123b5d;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .sidebarOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: rgba(10, 30, 45, 0.5);
+    cursor: pointer;
+  }
+
+  .main {
+    width: 100%;
+    min-width: 0;
+    padding: 18px;
+    box-sizing: border-box;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
+  }
+}
+/* Dashboard visual alignment with Teacher page */
+.header h1 {
+color: #123b5d;
+font-size: 32px;
+font-weight: 700;
+}
+.header p {
+color: #6b8799;
+font-size: 14px;
+}
+.profile {
+background: #fff;
+border: 1px solid #d8eaf2;
+border-radius: 12px;
+padding: 10px 14px;
+gap: 12px;
+}
+.profileAvatar {
+width: 40px;
+height: 40px;
+flex-shrink: 0;
+display: flex;
+align-items: center;
+justify-content: center;
+border-radius: 50%;
+background: #1d6f9f;
+color: #fff;
+font-size: 14px;
+font-weight: 700;
+}
+.sectionPanel {
+border: 1px solid #d8eaf2;
+border-radius: 14px;
+box-shadow: 0 3px 12px rgba(18, 59, 93, 0.05);
+}
+.panelHeader {
+padding: 20px;
+border-bottom-color: #e5f0f5;
+}
+.panelHeader h2 {
+color: #123b5d;
+font-size: 19px;
+font-weight: 700;
+}
+/* Student dashboard desktop layout alignment */
+@media (min-width: 801px) {
+.sidebar {
+position: fixed;
+top: 0;
+left: 0;
+width: 245px;
+height: 100vh;
+height: 100dvh;
+min-height: 0;
+overflow-y: auto;
+overscroll-behavior: contain;
+z-index: 20;
+}
+.main {
+margin-left: 245px;
+min-width: 0;
+}
+}
+
+/* Student mobile menu button aligned with teacher dashboard */
+@media (max-width: 800px) {
+  .mobileMenuButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 10px;
+    background: #123b5d;
+    color: #fff;
+    font-size: 25px;
+    font-weight: 400;
+    cursor: pointer;
+    z-index: 1002;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  }
+
+  .main {
+    padding-top: 76px;
+  }
+}
+
+/* Final student calendar sizing: match teacher calendar */
+.studentCalendar {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.studentCalendarWeekdays,
+.studentCalendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(280px, 1fr)) !important;
+  min-width: 1960px !important;
+  width: 1960px;
+  box-sizing: border-box;
+}
+
+.studentCalendarGrid {
+  grid-auto-rows: minmax(170px, auto);
+}
+
+.studentCalendarCell {
+  min-width: 280px;
+  min-height: 170px;
+  padding: 9px;
+  box-sizing: border-box;
+}
+
+.studentCalendarClass {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 9px 10px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Status is shown by card color only */
+.studentCalendarClass .scheduleStatus,
+.studentCalendarClass .joinButton,
+.studentCalendarClass .noZoom {
+  display: none !important;
+}
+
+/* Keep class details readable */
+.studentCalendarClass strong {
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.studentCalendarClass > span {
+  font-size: 11px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+  .studentCalendarWeekdays,
+  .studentCalendarGrid {
+    min-width: 1960px !important;
+    width: 1960px;
+  }
+
+  .studentCalendarCell {
+    min-width: 280px;
+    min-height: 150px;
+    padding: 7px;
+  }
+}
+
+
+/* Final student calendar sizing: match teacher calendar */
+.studentCalendar {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.studentCalendarWeekdays,
+.studentCalendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(280px, 1fr)) !important;
+  min-width: 1960px !important;
+  width: 1960px;
+  box-sizing: border-box;
+}
+
+.studentCalendarGrid {
+  grid-auto-rows: minmax(170px, auto);
+}
+
+.studentCalendarCell {
+  min-width: 280px;
+  min-height: 170px;
+  padding: 9px;
+  box-sizing: border-box;
+}
+
+.studentCalendarClass {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 9px 10px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Calendar status is indicated by card color only */
+.studentCalendarClass .scheduleStatus,
+.studentCalendarClass .joinButton,
+.studentCalendarClass .noZoom {
+  display: none !important;
+}
+
+/* Keep class details readable */
+.studentCalendarClass strong {
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.studentCalendarClass > span {
+  font-size: 11px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+  .studentCalendarWeekdays,
+  .studentCalendarGrid {
+    min-width: 1960px !important;
+    width: 1960px;
+  }
+
+  .studentCalendarCell {
+    min-width: 280px;
+    min-height: 150px;
+    padding: 7px;
+  }
+}
